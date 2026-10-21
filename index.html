@@ -1,594 +1,597 @@
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>RIFT TACTICS | 롤 턴제 전략 게임</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0b1018">
+<title>RIFTBOUND TACTICS — 전략 카드 아레나</title>
 <style>
+/* =========================================================
+   RIFTBOUND TACTICS
+   단일 파일 전략 카드게임 — 외부 라이브러리/서버 불필요
+   ========================================================= */
 :root{
-  --bg:#080d18;--panel:#111b2d;--panel2:#17243a;
-  --gold:#d8b46a;--blue:#48b9ff;--red:#ff667b;
-  --text:#edf3ff;--muted:#9baac2;--line:#293953;
+  --bg:#080d14;--panel:#111a27;--panel2:#172335;--panel3:#202f43;
+  --line:#30445c;--text:#edf4ff;--muted:#9aabc1;--gold:#e7c879;
+  --blue:#5ac7ff;--red:#ff6f78;--green:#65dfae;--purple:#b7a0ff;
+  --shadow:0 16px 40px rgba(0,0,0,.32);--radius:16px;
 }
 *{box-sizing:border-box}
-body{
-  margin:0;background:radial-gradient(ellipse at top,#182843,#080d18 65%);
-  color:var(--text);font-family:Arial,"Malgun Gothic",sans-serif;
-  min-height:100vh;font-size:14px;
-}
-button,select{font:inherit}
-button{
-  border:1px solid #354967;border-radius:9px;padding:10px 12px;
-  color:var(--text);background:#1b2a42;cursor:pointer;
-  transition:.15s;
-}
-button:active{transform:scale(.97)}
-button:disabled{opacity:.3;cursor:not-allowed}
-button.primary{background:#b68b3c;border-color:#e5c77f;color:#101521;font-weight:800}
-button.blue{border-color:#2675a7;background:#123553}
-button.red{border-color:#a93e52;background:#421d2a}
-button.green{border-color:#287f6c;background:#123c35}
-button.full{width:100%}
-button:hover:not(:disabled){filter:brightness(1.2)}
-header{
-  text-align:center;padding:18px 12px 12px;border-bottom:1px solid #26344a;
-  background:#090f1cdd;
-}
-.logo{font-size:25px;font-weight:1000;letter-spacing:4px;color:var(--gold)}
-.subtitle{font-size:11px;color:var(--muted);margin-top:6px;letter-spacing:2px}
-main{width:min(100%,820px);margin:auto;padding:12px;display:grid;gap:12px}
-.panel{
-  background:linear-gradient(145deg,#131e31,#0e1727);
-  border:1px solid var(--line);border-radius:13px;padding:14px;
-  box-shadow:0 8px 25px #0002;
-}
-h2{font-size:15px;margin:0 0 12px;color:var(--gold)}
-h3{font-size:13px;margin:0 0 8px}
-p{line-height:1.6;color:var(--muted)}
-.small{font-size:11px;color:var(--muted)}
-.row{display:flex;gap:8px;align-items:center}
-.row>*{min-width:0}
-.between{justify-content:space-between}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-select{
-  width:100%;padding:11px;border-radius:8px;background:#0b1423;
-  color:white;border:1px solid #354967;
-}
-.champ-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
-.champ{
-  text-align:left;padding:9px 7px;min-height:83px;background:#111c2d;
-  border:1px solid #293b55;border-radius:9px;position:relative;
-}
-.champ .emoji{font-size:22px;display:block;margin-bottom:5px}
-.champ .name{font-weight:800;font-size:12px}
-.champ .role{font-size:10px;color:var(--muted);margin-top:4px}
-.champ.selected{border-color:var(--gold);background:#3b3020}
-.champ.banned{opacity:.25;filter:grayscale(1)}
-.champ.picked{border-color:var(--blue);background:#112e42}
-.champ.enemy-picked{border-color:var(--red);background:#3a1d2a}
-.tag{font-size:10px;padding:3px 6px;border-radius:5px;background:#26354b;color:#d4dfef}
-.hidden{display:none!important}
-.status{padding:10px;border-radius:8px;background:#0b1423;border:1px solid #25354b;line-height:1.6}
-.team{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.team-box{border-radius:10px;padding:11px;background:#101b2b;border:1px solid var(--line)}
-.team-box.ally{border-color:#2878a8}.team-box.enemy{border-color:#9e3a4e}
-.unit{padding:8px 0;border-bottom:1px solid #27344a}
-.unit:last-child{border-bottom:0}
-.unit-top{display:flex;justify-content:space-between;gap:5px;font-size:12px;font-weight:700}
-.hpbar{height:7px;background:#2c1e2b;border-radius:10px;overflow:hidden;margin:6px 0 3px}
-.hpfill{height:100%;background:linear-gradient(90deg,#27bd86,#8ce0a5);transition:width .25s}
-.enemy .hpfill{background:linear-gradient(90deg,#df435d,#ff9a86)}
-.stats{font-size:10px;color:var(--muted)}
-.battle-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.action-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
-.action{min-height:66px;text-align:left}
-.action strong{display:block;margin-bottom:5px}
-.action span{font-size:10px;color:#bac8dc;line-height:1.4}
-.log{
-  height:180px;overflow-y:auto;background:#080f1b;border:1px solid #24334a;
-  border-radius:8px;padding:9px;font-size:12px;line-height:1.65;
-}
-.log-line{padding:3px 0;border-bottom:1px solid #18253a}
-.log-line:last-child{border:0}
-.log .good{color:#72e0ad}.log .bad{color:#ff8796}.log .system{color:var(--gold)}
-.pill{display:inline-block;border:1px solid #3b4c64;border-radius:20px;padding:4px 8px;font-size:10px;color:#cbd6e6}
-.footer{text-align:center;padding:8px 0 20px;font-size:10px;color:#64748b}
-@media(min-width:600px){
-  main{padding:18px}
-  .champ-grid{grid-template-columns:repeat(5,minmax(0,1fr))}
-  .champ{min-height:94px}
-}
-@media(max-width:360px){
-  main{padding:8px}
-  .panel{padding:10px}
-  .champ-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .logo{font-size:21px}
-}
+html{scroll-behavior:smooth}
+body{margin:0;background:radial-gradient(ellipse at 50% -20%,#20334b 0%,#0b121d 43%,var(--bg) 78%);color:var(--text);font-family:Inter,"Noto Sans KR","Malgun Gothic",system-ui,sans-serif;min-height:100vh}
+button{font:inherit;cursor:pointer}
+button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+button:disabled{opacity:.38;cursor:not-allowed}
+.topbar{position:sticky;top:0;z-index:20;background:rgba(7,12,19,.9);backdrop-filter:blur(16px);border-bottom:1px solid #29394e}
+.topbar-inner{max-width:1450px;margin:auto;padding:12px 22px;display:flex;align-items:center;justify-content:space-between;gap:18px}
+.brand{display:flex;align-items:center;gap:12px}
+.brand-mark{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:linear-gradient(135deg,#f0d88b,#a87938);color:#17202c;font-size:23px;font-weight:1000;box-shadow:0 0 24px #d7a94d30}
+.brand h1{font-size:16px;letter-spacing:2px;margin:0;font-weight:900}
+.brand small{display:block;color:var(--muted);font-size:10px;letter-spacing:2px;margin-top:3px}
+.top-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.btn{border:1px solid var(--line);color:var(--text);background:linear-gradient(180deg,#24364c,#172435);padding:9px 13px;border-radius:10px;font-weight:750;transition:.18s}
+.btn:hover:not(:disabled){transform:translateY(-1px);border-color:#7892b2;filter:brightness(1.12)}
+.btn.primary{background:linear-gradient(135deg,#e9d08b,#b98b45);color:#17202b;border:0}
+.btn.danger{border-color:#7a3c4b;background:#3a202a}
+.btn.ghost{background:transparent}
+.btn.small{padding:6px 9px;font-size:12px}
+main{max-width:1450px;margin:auto;padding:22px}
+.screen{display:none}.screen.active{display:block}
+.hero{display:grid;grid-template-columns:1.25fr .75fr;gap:20px;margin-bottom:20px}
+.hero-main,.hero-side{border:1px solid var(--line);border-radius:22px;overflow:hidden;background:linear-gradient(135deg,#17283b,#0e1724);box-shadow:var(--shadow)}
+.hero-main{padding:30px;position:relative;min-height:245px}
+.hero-main:after{content:"✦";position:absolute;right:30px;bottom:-62px;font-size:230px;color:#d7bd7630;transform:rotate(-15deg);pointer-events:none}
+.eyebrow{font-size:11px;letter-spacing:3px;color:var(--gold);font-weight:900}
+.hero h2{font-size:clamp(28px,4vw,48px);line-height:1.12;margin:14px 0 12px;max-width:620px}
+.hero p{color:#b5c4d7;max-width:600px;line-height:1.7;margin:0 0 20px}
+.hero-side{padding:23px;display:flex;flex-direction:column;justify-content:space-between;gap:18px;background:linear-gradient(155deg,#1b293d,#101722)}
+.stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.stat{padding:12px 10px;background:#0c1420;border:1px solid #2a3b50;border-radius:12px}
+.stat strong{display:block;font-size:22px;color:var(--gold)}.stat span{font-size:11px;color:var(--muted)}
+.section-head{display:flex;align-items:end;justify-content:space-between;gap:14px;margin:24px 0 13px}
+.section-head h3{margin:0;font-size:18px}.section-head p{margin:4px 0 0;color:var(--muted);font-size:12px}
+.deck-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px}
+.deck-choice{padding:16px;text-align:left;border:1px solid var(--line);border-radius:15px;background:linear-gradient(145deg,#172436,#0f1722);color:var(--text);transition:.2s;min-height:150px}
+.deck-choice:hover{border-color:var(--gold);transform:translateY(-3px)}
+.deck-choice .emoji{font-size:29px}.deck-choice h4{margin:10px 0 5px;font-size:15px}.deck-choice p{margin:0;color:var(--muted);font-size:12px;line-height:1.5}
+.pill{display:inline-flex;align-items:center;gap:5px;border-radius:99px;padding:4px 8px;font-size:10px;font-weight:800;background:#293a4e;color:#c9d8ea}
+.pill.blue{background:#12394b;color:#8ce0ff}.pill.red{background:#492630;color:#ffadb3}.pill.gold{background:#493b22;color:#f4d997}
+.setup-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:16px}
+.select{background:#111d2c;color:var(--text);border:1px solid var(--line);border-radius:9px;padding:9px 12px}
+.note{color:var(--muted);font-size:12px;line-height:1.65}
+.game-layout{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:17px;align-items:start}
+.game-main{min-width:0}.sidebar{display:flex;flex-direction:column;gap:13px}
+.panel{border:1px solid var(--line);border-radius:var(--radius);background:linear-gradient(155deg,#151f2e,#0e1621);box-shadow:var(--shadow);overflow:hidden}
+.panel-head{display:flex;justify-content:space-between;align-items:center;padding:13px 15px;border-bottom:1px solid #27384d;gap:10px}
+.panel-head h3{font-size:13px;margin:0;letter-spacing:.5px}.panel-body{padding:14px}
+.battle-top{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center;padding:16px}
+.team-banner{border:1px solid #31445b;border-radius:13px;padding:12px;background:#101a28}
+.team-banner.enemy{border-color:#633744;background:#24151d}
+.team-title{display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:900;margin-bottom:10px}
+.hp-label{display:flex;justify-content:space-between;font-size:11px;color:#b9c7d8;margin-bottom:5px}
+.bar{height:8px;background:#273344;border-radius:99px;overflow:hidden}.bar>i{display:block;height:100%;border-radius:99px;transition:width .35s}
+.bar.hp>i{background:linear-gradient(90deg,#42c58f,#80edb3)}.enemy .bar.hp>i{background:linear-gradient(90deg,#d94e62,#ff8b92)}
+.bar.mana>i{background:linear-gradient(90deg,#4b9ee7,#9cdcff)}
+.vs{font-size:12px;color:var(--gold);font-weight:1000;letter-spacing:2px}
+.resource-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
+.resource{border-radius:8px;padding:5px 7px;background:#1b2b3d;color:#d8e6f7;font-size:11px}
+.resource b{color:var(--gold)}
+.lanes{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:0 14px 14px}
+.lane{position:relative;min-height:130px;border:1px solid #34475d;border-radius:13px;background:linear-gradient(180deg,#1a2b3a,#101a24);padding:11px;overflow:hidden}
+.lane:before{content:"";position:absolute;inset:0;background:linear-gradient(120deg,transparent 25%,#5aa9b510 50%,transparent 75%);pointer-events:none}
+.lane-head{display:flex;justify-content:space-between;align-items:center;font-size:11px;font-weight:900;color:#dce8f7;position:relative}
+.lane-track{height:5px;background:#26384a;border-radius:99px;margin:10px 0;overflow:hidden}
+.lane-track i{display:block;height:100%;background:linear-gradient(90deg,#58c6ff,#e9d18a);border-radius:99px}
+.lane-units{display:flex;gap:5px;flex-wrap:wrap;min-height:37px;position:relative}
+.unit-token{width:31px;height:35px;border:1px solid #68809b;border-radius:8px;display:grid;place-items:center;background:#1e3448;font-size:18px;position:relative}
+.unit-token.enemy{background:#41232d;border-color:#a75b68}
+.unit-token small{position:absolute;right:-4px;bottom:-5px;font-size:9px;border-radius:5px;background:#0a1018;padding:1px 3px}
+.lane-foot{font-size:10px;color:var(--muted);margin-top:8px;position:relative}
+.hand-head{display:flex;justify-content:space-between;align-items:center;padding:13px 15px;border-bottom:1px solid #27384d}
+.hand-head h3{margin:0;font-size:13px}
+.hand{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;padding:13px}
+.card{--accent:#6dbde8;position:relative;min-width:0;border-radius:12px;border:1px solid #40546b;background:linear-gradient(155deg,#24364a,#111a27 80%);overflow:hidden;display:flex;flex-direction:column;min-height:225px;transition:transform .18s,border-color .18s,box-shadow .18s;cursor:pointer;text-align:left;color:var(--text)}
+.card:hover{transform:translateY(-5px);border-color:var(--accent);box-shadow:0 9px 24px #0006}
+.card.selected{border:2px solid var(--gold);box-shadow:0 0 0 2px #e7c87924}
+.card:before{content:"";height:3px;background:var(--accent);display:block}
+.card-art{height:82px;display:grid;place-items:center;font-size:45px;background:radial-gradient(circle at 50% 40%,color-mix(in srgb,var(--accent) 28%,transparent),transparent 68%),linear-gradient(145deg,#26384d,#111923);position:relative}
+.card-cost{position:absolute;top:7px;left:7px;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:#e7d18c;color:#192433;font-size:13px;font-weight:1000;border:2px solid #fff1}
+.card-type{position:absolute;bottom:6px;right:7px;font-size:9px;letter-spacing:1px;text-transform:uppercase;color:#d5e4f7}
+.card-content{padding:9px 9px 10px;display:flex;flex-direction:column;gap:6px;flex:1}
+.card-name{font-weight:900;font-size:12px;line-height:1.3}.card-desc{font-size:10px;line-height:1.45;color:#b5c4d5;flex:1}
+.card-stats{display:flex;justify-content:space-between;gap:4px;font-size:10px;color:#e9d89e;font-weight:800}
+.card-footer{display:flex;justify-content:space-between;align-items:center;margin-top:2px;gap:3px}
+.tag{font-size:9px;border-radius:5px;padding:3px 5px;background:#29394b;color:#b9cde2}
+.card-action{font-size:10px;font-weight:900;color:var(--accent)}
+.empty-hand{padding:25px;text-align:center;color:var(--muted);font-size:12px}
+.game-controls{display:flex;gap:8px;flex-wrap:wrap;padding:0 14px 14px}
+.log-list{max-height:245px;overflow:auto;padding:10px 13px}
+.log-entry{padding:8px 0;border-bottom:1px solid #263547;font-size:11px;line-height:1.55;color:#c4d1e1}
+.log-entry:last-child{border:0}.log-entry strong{color:var(--gold)}
+.objective{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:center;padding:13px}
+.objective-icon{font-size:27px;width:46px;height:46px;border-radius:12px;background:#28374a;display:grid;place-items:center}
+.objective h4{margin:0 0 4px;font-size:12px}.objective p{margin:0;font-size:10px;color:var(--muted);line-height:1.5}
+.mini-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.mini-stat{background:#0c1420;border:1px solid #27384d;padding:10px;border-radius:10px}
+.mini-stat span{font-size:10px;color:var(--muted);display:block}.mini-stat b{font-size:19px;display:block;margin-top:3px}
+.overlay{position:fixed;inset:0;background:#050910d9;backdrop-filter:blur(8px);z-index:50;display:none;align-items:center;justify-content:center;padding:18px}
+.overlay.open{display:flex}
+.modal{width:min(680px,100%);max-height:90vh;overflow:auto;border:1px solid #50657e;border-radius:20px;background:linear-gradient(145deg,#1a293b,#0d1520);box-shadow:0 30px 90px #000b}
+.modal-head{padding:19px 22px;border-bottom:1px solid #33465d;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.modal-head h2{font-size:18px;margin:0}.modal-body{padding:20px 22px}.modal-foot{padding:15px 22px;border-top:1px solid #33465d;display:flex;justify-content:flex-end;gap:8px}
+.detail-grid{display:grid;grid-template-columns:150px 1fr;gap:18px}
+.detail-art{border-radius:14px;min-height:180px;display:grid;place-items:center;font-size:70px;background:linear-gradient(145deg,#263e55,#111925);border:1px solid #455a71}
+.detail-stat-row{display:flex;gap:7px;flex-wrap:wrap;margin:10px 0}
+.detail-copy{color:#bfcede;font-size:13px;line-height:1.7}
+.detail-copy h4{color:var(--gold);margin:14px 0 5px}
+.result-title{font-size:32px;font-weight:1000;text-align:center;margin:12px 0}.result-sub{text-align:center;color:var(--muted);line-height:1.7}
+.toast{position:fixed;left:50%;bottom:25px;transform:translate(-50%,20px);opacity:0;pointer-events:none;z-index:100;padding:12px 17px;border:1px solid #667c95;border-radius:12px;background:#172536;box-shadow:var(--shadow);font-size:12px;transition:.25s;max-width:90vw;text-align:center}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.rules-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.rule{padding:13px;border:1px solid #2e4258;border-radius:12px;background:#111c29}.rule b{display:block;margin-bottom:5px;font-size:12px;color:var(--gold)}.rule p{margin:0;font-size:11px;color:#b7c7d9;line-height:1.6}
+.footer{text-align:center;padding:25px 0 5px;color:#61738a;font-size:10px;letter-spacing:1px}
+@media(max-width:1050px){.game-layout{grid-template-columns:1fr}.sidebar{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.deck-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:700px){main{padding:12px}.topbar-inner{padding:10px 12px}.brand h1{font-size:12px}.brand-mark{width:35px;height:35px}.top-actions .btn{padding:7px 9px;font-size:11px}.hero{grid-template-columns:1fr}.hero-main{padding:22px;min-height:225px}.hero-side{padding:17px}.deck-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.game-layout{display:block}.sidebar{display:grid;grid-template-columns:1fr;margin-top:13px}.battle-top{padding:10px;gap:7px}.team-banner{padding:9px}.lanes{gap:6px;padding:0 8px 10px}.lane{padding:8px;min-height:120px}.lane-head{font-size:10px}.unit-token{width:25px;height:29px;font-size:15px}.hand{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:9px}.card{min-height:215px}.card-art{height:78px}.hand .card:last-child:nth-child(odd){grid-column:span 2}.detail-grid{grid-template-columns:1fr}.detail-art{min-height:120px;font-size:55px}.rules-grid{grid-template-columns:1fr}.section-head{align-items:start;flex-direction:column}}
+@media(min-width:701px) and (max-width:1100px){.hand{grid-template-columns:repeat(3,minmax(0,1fr))}.card{min-height:210px}}
 </style>
 </head>
 <body>
-<header>
-  <div class="logo">RIFT TACTICS</div>
-  <div class="subtitle">TURN-BASED CHAMPION STRATEGY</div>
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand"><div class="brand-mark">✦</div><div><h1>RIFTBOUND TACTICS</h1><small>STRATEGY CARD ARENA</small></div></div>
+    <div class="top-actions">
+      <button class="btn ghost small" id="rulesBtn">게임 규칙</button>
+      <button class="btn ghost small" id="collectionBtn">카드 도감</button>
+      <button class="btn small" id="homeBtn">메인 메뉴</button>
+    </div>
+  </div>
 </header>
 <main>
-  <section class="panel" id="setup">
-    <h2>01. 전투 설정</h2>
-    <div class="grid2">
-      <div>
-        <label class="small" for="difficulty">레드팀 AI 난이도</label>
-        <select id="difficulty">
-          <option value="0">쉬움</option>
-          <option value="1" selected>보통</option>
-          <option value="2">어려움</option>
-          <option value="3">아주 어려움</option>
-        </select>
-      </div>
-      <div>
-        <label class="small" for="mode">게임 모드</label>
-        <select id="mode">
-          <option value="draft">직접 밴픽</option>
-          <option value="quick">빠른 전투</option>
-        </select>
-      </div>
+<section id="homeScreen" class="screen active">
+  <div class="hero">
+    <div class="hero-main">
+      <div class="eyebrow">TACTICS • LANES • OBJECTIVES</div>
+      <h2>한 장의 선택이<br>전장의 흐름을 바꾼다.</h2>
+      <p>라인을 장악하고, 챔피언을 성장시키고, 오브젝트를 차지해 적의 넥서스를 무너뜨리세요. 매 턴 제한된 마나로 최선의 수를 찾아야 합니다.</p>
+      <button class="btn primary" id="startBtn">전투 시작하기　↗</button>
+      <button class="btn" id="tutorialBtn">플레이 방법</button>
     </div>
-    <p>블루팀 챔피언 3명과 레드팀 챔피언 3명이 턴제로 싸운다. 각 턴에 행동 하나를 선택해 상대 팀을 먼저 전멸시키면 승리한다.</p>
-    <button class="primary full" id="startBtn">게임 시작</button>
-  </section>
+    <div class="hero-side">
+      <div><span class="pill gold">싱글 플레이 · AI 상대</span><h3 style="margin:12px 0 7px;font-size:20px">리프트 전술전</h3><p class="note">매 판 새롭게 섞이는 카드와 세 가지 라인, 드래곤·전령 오브젝트를 활용하는 턴제 전략 카드게임입니다.</p></div>
+      <div class="stat-row"><div class="stat"><strong>3</strong><span>전장 라인</span></div><div class="stat"><strong>24+</strong><span>카드 종류</span></div><div class="stat"><strong>∞</strong><span>전략 조합</span></div></div>
+    </div>
+  </div>
+  <div class="section-head"><div><h3>전술 덱 선택</h3><p>각 덱은 서로 다른 승리 계획과 플레이 스타일을 가집니다.</p></div><span class="pill">덱은 게임 중 변경 불가</span></div>
+  <div class="deck-grid" id="deckGrid"></div>
+  <div class="setup-row">
+    <label class="note" for="difficulty">AI 난이도</label>
+    <select class="select" id="difficulty"><option value="easy">쉬움 — 실수를 자주 함</option><option value="normal" selected>보통 — 균형 잡힌 플레이</option><option value="hard">어려움 — 오브젝트와 교환 계산</option></select>
+    <label class="note" for="startingMode">시작 조건</label>
+    <select class="select" id="startingMode"><option value="standard" selected>표준 전투</option><option value="comeback">역전 모드 — 적이 먼저 성장</option></select>
+  </div>
+  <p class="note">이 게임은 독립적으로 제작된 팬메이드 스타일의 오리지널 카드게임입니다. 네트워크 연결이나 외부 라이브러리가 필요하지 않습니다.</p>
+</section>
 
-  <section class="panel hidden" id="draftPanel">
-    <div class="row between">
-      <h2>02. 챔피언 밴픽</h2><span class="pill" id="draftCount">1 / 6</span>
-    </div>
-    <div class="status" id="draftStatus"></div>
-    <div class="row" style="margin:10px 0">
-      <span class="small">선택 가능 챔피언</span><span class="small" id="remaining"></span>
-    </div>
-    <div class="champ-grid" id="champGrid"></div>
-    <div style="margin-top:10px" class="row">
-      <button id="autoDraft" class="primary full">남은 밴픽 자동 진행</button>
-    </div>
-    <p class="small">블루팀의 밴과 픽은 직접 선택할 수 있다. 레드팀은 AI가 자동으로 선택한다.</p>
-  </section>
-
-  <section class="panel hidden" id="battlePanel">
-    <div class="row between">
-      <h2>03. 전투 상황</h2><span class="pill" id="roundLabel">1턴</span>
-    </div>
-    <div class="team">
-      <div class="team-box ally">
-        <h3 style="color:var(--blue)">블루팀</h3>
-        <div id="blueUnits"></div>
+<section id="gameScreen" class="screen">
+  <div class="game-layout">
+    <div class="game-main">
+      <div class="panel">
+        <div class="battle-top">
+          <div class="team-banner">
+            <div class="team-title"><span>🛡️ 블루 팀 · 플레이어</span><span id="playerNexusText">30 / 30</span></div>
+            <div class="hp-label"><span>넥서스 체력</span><b id="playerHpLabel">30/30</b></div><div class="bar hp"><i id="playerHpBar" style="width:100%"></i></div>
+            <div class="resource-row"><span class="resource">💧 마나 <b id="manaText">1/1</b></span><span class="resource">🪙 골드 <b id="goldText">0</b></span></div>
+          </div>
+          <div class="vs">VS</div>
+          <div class="team-banner enemy">
+            <div class="team-title"><span>🔻 레드 팀 · AI</span><span id="enemyNexusText">30 / 30</span></div>
+            <div class="hp-label"><span>넥서스 체력</span><b id="enemyHpLabel">30/30</b></div><div class="bar hp"><i id="enemyHpBar" style="width:100%"></i></div>
+            <div class="resource-row"><span class="resource">💧 마나 <b id="enemyManaText">1/1</b></span><span class="resource">🏆 오브젝트 <b id="enemyObjText">0</b></span></div>
+          </div>
+        </div>
+        <div class="panel-head"><h3>전장 상황 · THREE LANES</h3><span class="pill" id="turnPill">1턴 · 플레이어 차례</span></div>
+        <div class="lanes" id="lanes"></div>
+        <div class="game-controls">
+          <button class="btn primary" id="endTurnBtn">턴 종료 →</button>
+          <button class="btn" id="drawBtn">카드 1장 뽑기 (2골드)</button>
+          <button class="btn" id="surrenderBtn">항복</button>
+          <span class="note" id="turnHint">카드를 선택한 뒤 라인에 배치하거나 효과를 사용하세요.</span>
+        </div>
       </div>
-      <div class="team-box enemy">
-        <h3 style="color:var(--red)">레드팀 AI</h3>
-        <div id="redUnits"></div>
+      <div class="panel" style="margin-top:14px">
+        <div class="hand-head"><h3>내 손패</h3><span class="pill blue" id="handCount">5장</span><span class="note" id="handHelp">카드를 눌러 상세 보기 · 다시 눌러 사용</span></div>
+        <div class="hand" id="hand"></div>
       </div>
-    </div>
-    <div class="status" style="margin-top:10px">
-      <div class="row between"><strong id="turnTitle">블루팀의 차례</strong><span class="pill" id="turnNumber">1 / 6</span></div>
-      <div class="small" id="turnHint" style="margin-top:5px">행동을 선택해.</div>
-    </div>
-    <div style="margin-top:12px">
-      <h3>행동 선택</h3>
-      <div class="action-grid">
-        <button class="action blue" data-action="attack"><strong>⚔ 일반 공격</strong><span>적 한 명에게 기본 피해</span></button>
-        <button class="action" data-action="skill"><strong>✦ 고유 스킬</strong><span>강력한 피해 또는 특수 효과</span></button>
-        <button class="action green" data-action="guard"><strong>🛡 방어</strong><span>이번 적 공격 피해 감소</span></button>
-        <button class="action" data-action="rest"><strong>✚ 재정비</strong><span>체력 회복, 공격 대신 사용</span></button>
+      <div class="panel" style="margin-top:14px">
+        <div class="panel-head"><h3>전투 기록</h3><button class="btn small ghost" id="clearLogBtn">기록 접기</button></div>
+        <div class="log-list" id="logList"></div>
       </div>
     </div>
-    <div id="targetBox" class="hidden" style="margin-top:12px">
-      <h3>대상 선택</h3><div id="targetButtons" class="grid2"></div>
-    </div>
-    <div style="margin-top:14px">
-      <div class="row between"><h3>전투 기록</h3><button id="clearLog">기록 지우기</button></div>
-      <div class="log" id="battleLog"></div>
-    </div>
-    <button id="restartBtn" class="full" style="margin-top:12px">처음부터 다시</button>
-  </section>
-  <div class="footer">팬메이드 전략 게임 · 실제 리그 오브 레전드 게임 데이터와는 별개</div>
+    <aside class="sidebar">
+      <div class="panel"><div class="panel-head"><h3>전술 목표</h3><span class="pill gold">OBJECTIVES</span></div><div id="objectiveBox"></div></div>
+      <div class="panel"><div class="panel-head"><h3>전황 지표</h3></div><div class="panel-body"><div class="mini-stats"><div class="mini-stat"><span>내 챔피언</span><b id="myUnits">0</b></div><div class="mini-stat"><span>적 챔피언</span><b id="enemyUnits">0</b></div><div class="mini-stat"><span>점령한 라인</span><b id="myLanes">0 / 3</b></div><div class="mini-stat"><span>오브젝트 점수</span><b id="myObjectives">0</b></div></div></div></div>
+      <div class="panel"><div class="panel-head"><h3>현재 선택 카드</h3></div><div class="panel-body" id="selectedInfo"><p class="note">손패에서 카드를 선택하면 여기에서 상세 정보를 확인할 수 있습니다.</p></div></div>
+      <div class="panel"><div class="panel-head"><h3>전투 팁</h3></div><div class="panel-body"><p class="note" id="tipText">라인은 챔피언의 공격 경로입니다. 빈 라인을 선점하면 넥서스에 피해를 줄 수 있습니다.</p></div></div>
+    </aside>
+  </div>
+</section>
+<div class="footer">RIFTBOUND TACTICS · ORIGINAL STRATEGY CARD GAME · BUILD YOUR OWN WIN CONDITION</div>
 </main>
+
+<div class="overlay" id="modalOverlay" role="dialog" aria-modal="true"><div class="modal"><div class="modal-head"><h2 id="modalTitle">상세 정보</h2><button class="btn small" id="modalClose">닫기 ✕</button></div><div class="modal-body" id="modalBody"></div><div class="modal-foot" id="modalFoot"></div></div></div>
+<div class="toast" id="toast"></div>
 
 <script>
 "use strict";
-
-const CHAMPS = [
- {id:"garen",name:"가렌",emoji:"🛡️",role:"전사",hp:125,atk:19,def:7,skill:"데마시아의 정의",power:1.8,desc:"강력한 단일 대상 공격"},
- {id:"lux",name:"럭스",emoji:"✨",role:"마법사",hp:82,atk:13,def:3,skill:"최종 광휘",power:2.3,desc:"마법 폭발 피해"},
- {id:"ashe",name:"애쉬",emoji:"🏹",role:"원거리 딜러",hp:88,atk:18,def:3,skill:"마법의 수정화살",power:1.8,desc:"높은 피해의 정밀 사격"},
- {id:"ahri",name:"아리",emoji:"🦊",role:"마법사",hp:91,atk:15,def:4,skill:"혼령 질주",power:1.9,desc:"공격 후 체력 회복"},
- {id:"zed",name:"제드",emoji:"🥷",role:"암살자",hp:85,atk:23,def:2,skill:"죽음의 표식",power:2.2,desc:"암살 특화 고피해"},
- {id:"leona",name:"레오나",emoji:"☀️",role:"탱커",hp:135,atk:12,def:9,skill:"흑점 폭발",power:1.5,desc:"튼튼한 방어와 반격"},
- {id:"jinx",name:"징크스",emoji:"💥",role:"원거리 딜러",hp:84,atk:21,def:2,skill:"초강력 초토화 로켓",power:2.1,desc:"강력한 한 방"},
- {id:"yasuo",name:"야스오",emoji:"🌪️",role:"전사",hp:98,atk:20,def:4,skill:"최후의 숨결",power:2.0,desc:"공격과 방어의 균형"},
- {id:"soraka",name:"소라카",emoji:"🌟",role:"서포터",hp:95,atk:10,def:4,skill:"기원",power:0.7,desc:"팀 생존력을 높이는 회복"},
- {id:"darius",name:"다리우스",emoji:"🪓",role:"전사",hp:120,atk:22,def:5,skill:"녹서스의 단두대",power:2.0,desc:"강력한 처형 공격"},
- {id:"teemo",name:"티모",emoji:"🍄",role:"원거리 딜러",hp:78,atk:16,def:2,skill:"유독성 함정",power:1.7,desc:"전술적 독 공격"},
- {id:"thresh",name:"쓰레쉬",emoji:"⛓️",role:"서포터",hp:112,atk:13,def:6,skill:"영혼 감옥",power:1.6,desc:"공격과 보호에 능함"},
- {id:"veigar",name:"베이가",emoji:"🔮",role:"마법사",hp:76,atk:12,def:2,skill:"태초의 폭발",power:2.6,desc:"매우 높은 스킬 피해"},
- {id:"sett",name:"세트",emoji:"🥊",role:"전사",hp:126,atk:21,def:6,skill:"대미 장식",power:1.9,desc:"높은 체력과 공격력"},
- {id:"sona",name:"소나",emoji:"🎵",role:"서포터",hp:90,atk:11,def:3,skill:"크레센도",power:1.5,desc:"지원과 공격을 겸함"},
- {id:"khazix",name:"카직스",emoji:"🦂",role:"암살자",hp:84,atk:24,def:2,skill:"공허의 습격",power:2.0,desc:"높은 공격력의 암살자"},
- {id:"malphite",name:"말파이트",emoji:"🪨",role:"탱커",hp:145,atk:13,def:10,skill:"멈출 수 없는 힘",power:1.7,desc:"최상급 생존력"},
- {id:"missfortune",name:"미스 포츈",emoji:"🔫",role:"원거리 딜러",hp:87,atk:20,def:3,skill:"쌍권총 난사",power:2.0,desc:"강력한 사격"},
- {id:"morgana",name:"모르가나",emoji:"🖤",role:"마법사",hp:97,atk:14,def:4,skill:"영혼의 족쇄",power:1.7,desc:"공격과 제어"},
- {id:"vi",name:"바이",emoji:"👊",role:"전사",hp:115,atk:20,def:5,skill:"기동타격",power:1.8,desc:"단단한 돌격형 전사"},
- {id:"braum",name:"브라움",emoji:"❄️",role:"탱커",hp:138,atk:12,def:9,skill:"빙하 균열",power:1.4,desc:"높은 방어력"},
- {id:"ezreal",name:"이즈리얼",emoji:"🎯",role:"원거리 딜러",hp:86,atk:19,def:3,skill:"정조준 일격",power:2.1,desc:"정밀한 원거리 공격"},
- {id:"annie",name:"애니",emoji:"🔥",role:"마법사",hp:88,atk:15,def:3,skill:"티버 소환",power:2.0,desc:"폭발적인 마법 피해"},
- {id:"warwick",name:"워윅",emoji:"🐺",role:"전사",hp:119,atk:19,def:6,skill:"무한의 구속",power:1.7,desc:"공격과 회복"},
- {id:"nami",name:"나미",emoji:"🌊",role:"서포터",hp:91,atk:12,def:3,skill:"해일",power:1.5,desc:"지원형 마법사"},
- {id:"riven",name:"리븐",emoji:"⚔️",role:"전사",hp:101,atk:22,def:4,skill:"추방자의 검",power:1.9,desc:"공격적인 근접 전사"},
- {id:"veigar2",name:"신드라",emoji:"🟣",role:"마법사",hp:84,atk:15,def:2,skill:"풀려난 힘",power:2.3,desc:"강력한 마법 공격"},
- {id:"blitz",name:"블리츠크랭크",emoji:"🤖",role:"탱커",hp:120,atk:14,def:7,skill:"정전기장",power:1.6,desc:"튼튼한 기계형 챔피언"},
- {id:"kennen",name:"케넨",emoji:"⚡",role:"마법사",hp:86,atk:15,def:3,skill:"날카로운 소용돌이",power:1.8,desc:"빠른 마법 공격"},
- {id:"kog",name:"코그모",emoji:"👾",role:"원거리 딜러",hp:82,atk:22,def:2,skill:"살아있는 곡사포",power:2.1,desc:"높은 원거리 피해"},
- {id:"ornn",name:"오른",emoji:"🔨",role:"탱커",hp:145,atk:16,def:9,skill:"대장장이 신의 부름",power:1.7,desc:"매우 높은 내구력"},
- {id:"katarina",name:"카타리나",emoji:"🗡️",role:"암살자",hp:82,atk:23,def:2,skill:"죽음의 연꽃",power:2.1,desc:"폭발적인 공격"},
- {id:"vayne",name:"베인",emoji:"🏹",role:"원거리 딜러",hp:83,atk:22,def:3,skill:"결전의 시간",power:1.9,desc:"정밀한 단일 공격"},
- {id:"swain",name:"스웨인",emoji:"🦅",role:"마법사",hp:110,atk:15,def:5,skill:"악의 승천",power:1.6,desc:"생존형 마법사"},
- {id:"poppy",name:"뽀삐",emoji:"🔔",role:"탱커",hp:130,atk:16,def:8,skill:"수호자의 심판",power:1.6,desc:"튼튼한 방어"},
- {id:"ekko",name:"에코",emoji:"⏳",role:"암살자",hp:89,atk:20,def:3,skill:"시공간 붕괴",power:2.0,desc:"공격과 회복"},
- {id:"kog2",name:"카이사",emoji:"💜",role:"원거리 딜러",hp:88,atk:21,def:3,skill:"사냥본능",power:1.9,desc:"공격적인 원거리 전투"},
- {id:"amumu",name:"아무무",emoji:"🧸",role:"탱커",hp:125,atk:13,def:8,skill:"슬픈 미라의 저주",power:1.5,desc:"생존과 광역 제어"},
- {id:"kennen2",name:"오리아나",emoji:"⚙️",role:"마법사",hp:90,atk:15,def:4,skill:"명령: 충격파",power:1.9,desc:"전략적인 마법 공격"},
- {id:"talon",name:"탈론",emoji:"🌑",role:"암살자",hp:86,atk:23,def:3,skill:"그림자 공격",power:2.0,desc:"고화력 암살자"}
+/* ========================== 카드 데이터 ========================== */
+const CARD_LIBRARY = [
+ {id:"vanguard",name:"강철 선봉장",type:"unit",cost:2,emoji:"🛡️",attack:2,hp:5,lane:"any",rarity:"일반",accent:"#7cb9d9",tags:["수호","전사"],desc:"튼튼한 전열 병사. 소환 시 방어 태세를 취해 첫 피해를 1 감소시킨다.",effect:"guard",detail:"라인을 안정적으로 지키는 기본 유닛입니다. 적의 공격을 받아내고 후방의 고화력 유닛을 보호하세요."},
+ {id:"blade",name:"그림자 검객",type:"unit",cost:3,emoji:"🗡️",attack:4,hp:2,lane:"any",rarity:"일반",accent:"#b5a4ff",tags:["암살","돌진"],desc:"공격력이 높지만 체력이 낮다. 소환한 턴에도 공격할 수 있다.",effect:"rush",detail:"빠른 템포를 만드는 암살자입니다. 적의 약한 유닛이나 넥서스를 기습하세요."},
+ {id:"ranger",name:"황혼 명사수",type:"unit",cost:3,emoji:"🏹",attack:3,hp:3,lane:"any",rarity:"일반",accent:"#80d9b3",tags:["원거리","정찰"],desc:"배치 시 해당 라인의 적 유닛 하나에게 피해 1.",effect:"scout",detail:"라인의 교환을 유리하게 만드는 원거리 유닛입니다."},
+ {id:"mage",name:"폭풍술사",type:"unit",cost:4,emoji:"🔮",attack:3,hp:4,lane:"any",rarity:"희귀",accent:"#9d9bff",tags:["마법사","광역"],desc:"배치 시 해당 라인의 모든 적 유닛에게 피해 1.",effect:"storm",detail:"여러 적이 모인 라인을 정리하는 데 탁월합니다."},
+ {id:"medic",name:"새벽의 치유사",type:"unit",cost:3,emoji:"✨",attack:1,hp:5,lane:"any",rarity:"일반",accent:"#8be1d2",tags:["지원","회복"],desc:"배치 시 내 넥서스를 3 회복하고 아군 유닛 하나를 1 회복.",effect:"heal",detail:"지속전에서 생명력을 보존해 승리 확률을 높입니다."},
+ {id:"brute",name:"협곡 파쇄자",type:"unit",cost:5,emoji:"🪓",attack:5,hp:5,lane:"any",rarity:"희귀",accent:"#e69a70",tags:["브루저","압박"],desc:"공격과 체력이 모두 높은 전투형 챔피언.",effect:"none",detail:"중반 이후 전투의 중심이 되는 강력한 전열입니다."},
+ {id:"assassin",name:"밤의 집행자",type:"unit",cost:4,emoji:"🌑",attack:5,hp:2,lane:"any",rarity:"희귀",accent:"#c19aff",tags:["암살","처형"],desc:"배치 시 체력 2 이하인 적 유닛 하나를 처치한다.",effect:"execute",detail:"적의 핵심 유닛을 제거해 전투 흐름을 바꾸세요."},
+ {id:"guardian",name:"수정 방벽",type:"unit",cost:4,emoji:"💎",attack:2,hp:7,lane:"any",rarity:"희귀",accent:"#83d6f4",tags:["탱커","방어"],desc:"이 유닛은 받는 첫 피해를 매 턴 2 감소시킨다.",effect:"shield",detail:"오래 살아남으며 라인을 점유하는 탱커입니다."},
+ {id:"duelist",name:"결투의 달인",type:"unit",cost:4,emoji:"⚔️",attack:4,hp:4,lane:"any",rarity:"일반",accent:"#e5ca7a",tags:["전사","결투"],desc:"배치 시 같은 라인의 가장 강한 적에게 피해 2.",effect:"duel",detail:"위협적인 적을 먼저 약화해 유리한 교환을 만듭니다."},
+ {id:"dragon",name:"고룡의 화신",type:"unit",cost:7,emoji:"🐉",attack:7,hp:7,lane:"any",rarity:"전설",accent:"#f0a96b",tags:["전설","거대"],desc:"강력한 전설 유닛. 배치 시 적 넥서스에 피해 2.",effect:"dragon",detail:"후반 승리 조건을 완성하는 강력한 피니셔입니다."},
+ {id:"captain",name:"전술 지휘관",type:"unit",cost:5,emoji:"👑",attack:3,hp:6,lane:"any",rarity:"희귀",accent:"#e5d18a",tags:["지휘","강화"],desc:"배치 시 같은 라인의 아군에게 공격력 +1.",effect:"rally",detail:"다수의 유닛을 전개한 뒤 사용하면 효율이 높습니다."},
+ {id:"wolf",name:"황야의 추적자",type:"unit",cost:2,emoji:"🐺",attack:2,hp:2,lane:"any",rarity:"일반",accent:"#9db8d2",tags:["정찰","기동"],desc:"배치 시 카드 1장을 뽑는다.",effect:"draw",detail:"저렴한 비용으로 손패를 보충하며 라인을 확보합니다."},
+ {id:"sentinel",name:"룬 감시자",type:"unit",cost:3,emoji:"🗿",attack:2,hp:5,lane:"any",rarity:"일반",accent:"#a2c3b5",tags:["수호","룬"],desc:"턴이 끝날 때 생존해 있으면 골드 1을 얻는다.",effect:"income",detail:"초반에 배치하면 장기적인 자원 우위를 얻을 수 있습니다."},
+ {id:"phoenix",name:"잿불 불사조",type:"unit",cost:6,emoji:"🔥",attack:5,hp:5,lane:"any",rarity:"전설",accent:"#ff9b68",tags:["전설","재생"],desc:"처음 쓰러질 때 체력 3으로 한 번 부활한다.",effect:"rebirth",detail:"상대가 제거 수단을 낭비하게 만드는 끈질긴 전설 유닛입니다."},
+ {id:"oracle",name:"별의 예언자",type:"unit",cost:4,emoji:"🌠",attack:2,hp:4,lane:"any",rarity:"희귀",accent:"#b5a4ff",tags:["지원","예지"],desc:"배치 시 다음 턴 최대 마나가 1 증가한다.",effect:"mana",detail:"마나 곡선을 앞당겨 강력한 카드를 먼저 사용할 수 있습니다."},
+ {id:"minions",name:"라인 미니언",type:"unit",cost:1,emoji:"⚒️",attack:1,hp:2,lane:"any",rarity:"일반",accent:"#8ca7bd",tags:["미니언","전개"],desc:"저렴한 유닛. 빈 라인에 배치해 압박을 시작한다.",effect:"none",detail:"초반 라인 점유와 후속 카드의 발판을 담당합니다."},
+ {id:"siege",name:"공성 거수",type:"unit",cost:6,emoji:"🏰",attack:4,hp:8,lane:"any",rarity:"희귀",accent:"#d4b27c",tags:["공성","탱커"],desc:"적 유닛이 없는 라인에서 공격하면 넥서스에 추가 피해 2.",effect:"siege",detail:"라인을 비운 뒤 배치하면 넥서스 압박에 큰 도움이 됩니다."},
+ {id:"spark",name:"비전 섬광",type:"spell",cost:2,emoji:"⚡",rarity:"일반",accent:"#f4d778",tags:["주문","피해"],desc:"선택한 라인의 적 유닛 하나에게 피해 3. 대상이 없으면 적 넥서스에 피해 2.",effect:"bolt",detail:"저비용 제거 주문으로 위험한 유닛을 처리하거나 넥서스를 압박합니다."},
+ {id:"meteor",name:"별똥별 폭격",type:"spell",cost:5,emoji:"☄️",rarity:"희귀",accent:"#ff9d77",tags:["주문","광역"],desc:"선택한 라인의 모든 적 유닛에게 피해 3.",effect:"meteor",detail:"적이 한 라인에 몰렸을 때 큰 이득을 얻는 광역 주문입니다."},
+ {id:"barrier",name:"수호막 전개",type:"spell",cost:2,emoji:"🫧",rarity:"일반",accent:"#7dcdf5",tags:["주문","보호"],desc:"아군 유닛 하나의 체력을 3 회복하고 공격력 +1.",effect:"barrier",detail:"핵심 유닛을 보호하고 다음 전투의 교환을 유리하게 만듭니다."},
+ {id:"ambush",name:"협곡 매복",type:"spell",cost:3,emoji:"🌿",rarity:"일반",accent:"#8bd49b",tags:["주문","기습"],desc:"선택한 라인에 아군 미니언 2기를 생성한다.",effect:"ambush",detail:"한 번에 라인 숫자를 늘려 점령과 공격을 준비합니다."},
+ {id:"freeze",name:"시간 동결",type:"spell",cost:3,emoji:"❄️",rarity:"희귀",accent:"#8edcf4",tags:["주문","제어"],desc:"선택한 라인의 적 유닛은 다음 전투 단계에서 공격하지 못한다.",effect:"freeze",detail:"강력한 적 라인의 공격을 한 턴 늦춰 방어선을 정비하세요."},
+ {id:"gold",name:"상단 교역",type:"spell",cost:0,emoji:"🪙",rarity:"일반",accent:"#e8d07d",tags:["경제","자원"],desc:"골드 3을 얻고 카드 1장을 뽑는다.",effect:"gold",detail:"손패가 말랐거나 다음 턴 큰 카드를 준비할 때 유용합니다."},
+ {id:"ignite",name:"불꽃 낙인",type:"spell",cost:3,emoji:"🔥",rarity:"일반",accent:"#ff8c70",tags:["주문","직접 피해"],desc:"적 넥서스에 피해 4를 준다.",effect:"ignite",detail:"게임을 마무리하거나 방어를 우회하는 직접 피해 주문입니다."},
+ {id:"cleanse",name:"정화의 파동",type:"spell",cost:2,emoji:"🌊",rarity:"일반",accent:"#7ddbd7",tags:["주문","회복"],desc:"내 넥서스를 5 회복한다.",effect:"cleanse",detail:"넥서스가 위험할 때 턴을 벌어주는 방어 주문입니다."},
+ {id:"banner",name:"전장의 깃발",type:"spell",cost:3,emoji:"🚩",rarity:"희귀",accent:"#e7c879",tags:["주문","강화"],desc:"모든 아군 유닛의 공격력 +1.",effect:"banner",detail:"유닛을 충분히 전개한 뒤 사용하면 폭발적인 압박을 만듭니다."},
+ {id:"recall",name:"전술 후퇴",type:"spell",cost:2,emoji:"🌀",rarity:"희귀",accent:"#bdabff",tags:["주문","전술"],desc:"아군 유닛 하나를 손패로 되돌리고 카드 1장을 뽑는다.",effect:"recall",detail:"위험한 전투를 피하거나 배치 효과를 다시 활용할 수 있습니다."},
+ {id:"smite",name:"강타",type:"spell",cost:2,emoji:"💥",rarity:"일반",accent:"#f5b27a",tags:["주문","오브젝트"],desc:"오브젝트 점수 2를 얻는다. 드래곤이 등장했을 때 특히 유용하다.",effect:"smite",detail:"라인 전투와 별개로 오브젝트 경쟁에서 우위를 점합니다."},
+ {id:"ward",name:"시야 와드",type:"spell",cost:1,emoji:"👁️",rarity:"일반",accent:"#7dd8c0",tags:["주문","시야"],desc:"골드 1을 얻고 적의 다음 행동을 약화시킨다.",effect:"ward",detail:"저비용으로 자원을 얻고 적의 템포를 늦춥니다."}
 ];
-
+const DECKS=[
+ {id:"balanced",name:"협곡의 균형",emoji:"⚖️",style:"균형형",color:"#7bc8e8",desc:"유닛과 주문이 고르게 구성된 초심자 추천 덱.",plan:"라인을 골고루 확보하고 중반 이후 강한 유닛으로 마무리",cards:["vanguard","blade","ranger","mage","medic","brute","guardian","duelist","wolf","sentinel","minions","spark","barrier","ambush","gold","ignite","cleanse","smite"]},
+ {id:"assassin",name:"그림자 급습",emoji:"🌑",style:"기습형",color:"#b6a0ff",desc:"빠른 공격과 제거 주문으로 빈틈을 노리는 덱.",plan:"저비용 유닛으로 압박하고 직접 피해 주문으로 마무리",cards:["blade","blade","assassin","ranger","wolf","minions","minions","spark","spark","ignite","ignite","ambush","freeze","ward","vanguard","duelist","recall","gold"]},
+ {id:"control",name:"비전 통제",emoji:"🔮",style:"컨트롤형",color:"#9e9cff",desc:"광역 주문과 방어 유닛으로 적의 공격을 무력화.",plan:"초반을 버티고 적 유닛을 정리한 뒤 고비용 카드로 역전",cards:["mage","mage","guardian","vanguard","medic","oracle","phoenix","dragon","meteor","meteor","freeze","freeze","barrier","cleanse","cleanse","spark","gold","smite"]},
+ {id:"siege",name:"강철 공성단",emoji:"🏰",style:"후반형",color:"#e3bd79",desc:"튼튼한 유닛과 공성 카드로 한 번의 진격을 노린다.",plan:"수호 유닛으로 시간을 벌고 공성 거수와 고룡으로 넥서스를 파괴",cards:["vanguard","guardian","guardian","brute","brute","siege","siege","dragon","dragon","captain","sentinel","minions","barrier","banner","gold","gold","cleanse","smite"]},
+ {id:"swarm",name:"미니언 군단",emoji:"⚒️",style:"전개형",color:"#8bd49b",desc:"값싼 유닛을 빠르게 늘리고 전체 강화로 압도한다.",plan:"여러 라인에 미니언을 깔고 전장의 깃발로 일제 공격",cards:["minions","minions","minions","wolf","wolf","ranger","captain","captain","banner","banner","ambush","ambush","gold","ward","vanguard","blade","duelist","spark"]},
+ {id:"dragon",name:"고룡의 유산",emoji:"🐉",style:"전설형",color:"#f1a96f",desc:"마나를 확보하고 전설 유닛으로 전장을 장악한다.",plan:"예언자와 감시자로 자원을 모은 뒤 고룡과 불사조를 전개",cards:["oracle","oracle","sentinel","sentinel","vanguard","guardian","phoenix","phoenix","dragon","dragon","brute","medic","gold","gold","barrier","smite","cleanse","meteor"]}
+];
+/* ========================== 게임 상태 ========================== */
 const $=id=>document.getElementById(id);
-const state={
-  difficulty:1,stage:"setup",phase:0,blue:[],red:[],bans:[],
-  available:[],currentAction:null,turn:"blue",turnCount:1,round:1,
-  activeBlue:0,activeRed:0,log:[],gameOver:false
-};
-const DIFF_NAMES=["쉬움","보통","어려움","아주 어려움"];
-const DRAFT_STEPS=[
- {team:"blue",type:"ban",label:"블루팀 밴"},
- {team:"red",type:"ban",label:"레드팀 밴"},
- {team:"blue",type:"pick",label:"블루팀 첫 번째 픽"},
- {team:"red",type:"pick",label:"레드팀 첫 번째 픽"},
- {team:"blue",type:"pick",label:"블루팀 두 번째 픽"},
- {team:"red",type:"pick",label:"레드팀 두 번째 픽"},
- {team:"blue",type:"pick",label:"블루팀 세 번째 픽"},
- {team:"red",type:"pick",label:"레드팀 세 번째 픽"}
+let state=null, selectedDeck="balanced", selectedCardIndex=null, chosenLane=null, logVisible=true, toastTimer=null;
+const LANES=[{id:0,name:"상단 라인",emoji:"⛰️"},{id:1,name:"중앙 라인",emoji:"🔷"},{id:2,name:"하단 라인",emoji:"🌊"}];
+const OBJECTIVES=[
+ {name:"원소 드래곤",emoji:"🐉",desc:"점령하면 오브젝트 점수 2점과 골드 2를 얻습니다.",reward:"2점 + 2골드"},
+ {name:"협곡 전령",emoji:"🪨",desc:"점령하면 오브젝트 점수 1점, 다음 공격 시 넥서스 피해 +3을 얻습니다.",reward:"1점 + 전령 강화"},
+ {name:"고대 제단",emoji:"🏛️",desc:"점령하면 내 넥서스를 4 회복하고 카드 1장을 뽑습니다.",reward:"회복 4 + 카드"}
 ];
-
-function shuffle(arr){
-  const a=[...arr];
-  for(let i=a.length-1;i>0;i--){
-    const j=Math.floor(Math.random()*(i+1));
-    [a[i],a[j]]=[a[j],a[i]];
+const rand=a=>a[Math.floor(Math.random()*a.length)];
+const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
+function shuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]]}return b}
+function makeCard(id){const c=CARD_LIBRARY.find(x=>x.id===id);return {...c,uid:Math.random().toString(36).slice(2,10)}}
+function makeDeck(deckId){const d=DECKS.find(x=>x.id===deckId);return shuffle(d.cards.map(makeCard))}
+function newState(){
+ const deck=DECKS.find(x=>x.id===selectedDeck);
+ const playerDeck=makeDeck(selectedDeck);
+ const enemyDeck=makeDeck(rand(DECKS.filter(x=>x.id!==selectedDeck)).id);
+ state={turn:1,active:"player",phase:"playing",difficulty:$("difficulty").value,mode:$("startingMode").value,
+  player:{hp:30,maxHp:30,mana:1,maxMana:1,gold:2,obj:0,deck:playerDeck,hand:[],board:[[],[],[]],bonusMana:0,herald:0,shield:0},
+  enemy:{hp:30,maxHp:30,mana:1,maxMana:1,gold:2,obj:0,deck:enemyDeck,hand:[],board:[[],[],[]],bonusMana:0,herald:0,shield:0},
+  objective:0,objectiveOwner:null,objectiveProgress:{player:0,enemy:0},log:[],selected:null,locked:false,turnCount:0};
+ if(state.mode==="comeback"){state.enemy.hp=35;state.enemy.maxHp=35;state.enemy.maxMana=2;state.enemy.mana=2;state.enemy.gold=4}
+ for(let i=0;i<5;i++){drawCard("player",true);drawCard("enemy",true)}
+ addLog("전투 개시! 세 개의 라인을 장악하고 적 넥서스를 파괴하세요.");
+ addLog(`${deck.name} 덱으로 전투를 시작했습니다.`);
+ showScreen("gameScreen");renderAll();updateTip();
+}
+function showScreen(id){document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));$(id).classList.add("active");window.scrollTo({top:0,behavior:"smooth"})}
+function addLog(msg){if(!state)return;state.log.unshift({turn:state.turn,text:msg});state.log=state.log.slice(0,70);renderLog()}
+function notify(msg){const t=$("toast");t.textContent=msg;t.classList.add("show");clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove("show"),2200)}
+function drawCard(side,quiet=false){const p=state[side];if(!p.deck.length){if(!quiet)addLog(`${side==="player"?"플레이어":"AI"}의 덱에 카드가 없습니다.`);return false}if(p.hand.length>=9){if(!quiet)addLog("손패가 가득 차 카드를 뽑지 못했습니다.");return false}p.hand.push(p.deck.pop());if(!quiet)addLog(`${side==="player"?"플레이어":"AI"}가 카드 1장을 뽑았습니다.`);return true}
+function cardById(id){return CARD_LIBRARY.find(c=>c.id===id)}
+function totalUnits(side){return state[side].board.reduce((n,l)=>n+l.length,0)}
+function unitsOnLane(side,lane){return state[side].board[lane]}
+function livingCount(side,lane){return unitsOnLane(side,lane).filter(u=>u.hp>0).length}
+function ownerName(side){return side==="player"?"블루 팀":"레드 팀"}
+function enemyOf(side){return side==="player"?"enemy":"player"}
+function addGold(side,n){state[side].gold=Math.max(0,state[side].gold+n)}
+function healNexus(side,n){const p=state[side];const before=p.hp;p.hp=clamp(p.hp+n,0,p.maxHp);return p.hp-before}
+function damageNexus(side,n){const p=state[side];let damage=n;if(p.shield>0){const blocked=Math.min(p.shield,damage);p.shield-=blocked;damage-=blocked}p.hp=Math.max(0,p.hp-damage);return damage}
+function damageUnit(unit,n){if(unit.guard){const blocked=Math.min(1,n);n-=blocked;unit.guard=false}if(unit.shield){const blocked=Math.min(2,n);n-=blocked;unit.shield=false}unit.hp-=n;return n}
+function cleanBoard(side){state[side].board.forEach((lane,i)=>{state[side].board[i]=lane.filter(u=>{if(u.hp<=0){if(u.effect==="rebirth"&&!u.reborn){u.reborn=true;u.hp=3;addLog(`${u.name}이 불사 효과로 부활했습니다!`);return true}addLog(`${ownerName(side)}의 ${u.name}이 쓰러졌습니다.`);return false}return true})})}
+function findTarget(side,lane,condition=()=>true){const arr=state[side].board[lane].filter(condition);return arr.sort((a,b)=>b.attack-a.attack)[0]||null}
+function resolveDeploy(side,card,lane){
+ const p=state[side],enemy=enemyOf(side);
+ if(card.type==="unit"){
+  if(p.board[lane].length>=5){if(side==="player")notify("해당 라인에는 유닛을 5기까지만 배치할 수 있습니다.");return false}
+  const unit={...card,hp:card.hp,maxHp:card.hp,owner:side,canAttack:card.effect==="rush",guard:card.effect==="guard",shield:card.effect==="shield",frozen:0,reborn:false,attacked:false};
+  p.board[lane].push(unit);addLog(`${ownerName(side)}가 ${LANES[lane].name}에 ${card.name}을 배치했습니다.`);
+  const foes=state[enemy].board[lane];
+  switch(card.effect){
+   case"scout":{const t=findTarget(enemy,lane);if(t){damageUnit(t,1);addLog(`${card.name}의 정찰 사격! ${t.name}에게 피해 1.`)}break}
+   case"storm":foes.forEach(u=>damageUnit(u,1));addLog(`${card.name}의 폭풍이 적 라인 전체를 휩쓸었습니다.`);break;
+   case"heal":healNexus(side,3);{const ally=findTarget(side,lane,u=>u.uid!==unit.uid&&u.hp<u.maxHp);if(ally)ally.hp=Math.min(ally.maxHp,ally.hp+1)}addLog("치유의 빛으로 넥서스 체력 3 회복.");break;
+   case"execute":{const t=findTarget(enemy,lane,u=>u.hp<=2);if(t){t.hp=0;addLog(`${t.name}이 처형당했습니다.`)}else addLog("처형할 대상이 없었습니다.");break}
+   case"duel":{const t=findTarget(enemy,lane);if(t){damageUnit(t,2);addLog(`${t.name}에게 결투 피해 2.`)}break}
+   case"dragon":damageNexus(enemy,2);addLog("고룡의 포효! 적 넥서스 피해 2.");break;
+   case"rally":p.board[lane].filter(u=>u.uid!==unit.uid).forEach(u=>u.attack++);addLog("전술 지휘관이 아군 공격력을 강화했습니다.");break;
+   case"draw":drawCard(side);break;
+   case"income":break;
+   case"mana":p.bonusMana++;addLog("예언자의 예지로 다음 턴 최대 마나가 증가합니다.");break;
   }
-  return a;
+  cleanBoard(enemy);cleanBoard(side);
+ } else {
+  addLog(`${ownerName(side)}가 주문 ${card.name}을 사용했습니다.`);
+  const target=findTarget(enemy,lane);
+  switch(card.effect){
+   case"bolt":if(target){damageUnit(target,3);addLog(`${target.name}에게 피해 3.`)}else{damageNexus(enemy,2);addLog("대상이 없어 적 넥서스에 피해 2.")}break;
+   case"meteor":state[enemy].board[lane].forEach(u=>damageUnit(u,3));addLog(`${LANES[lane].name}에 별똥별 폭격!`);break;
+   case"barrier":{const a=findTarget(side,lane,u=>u.hp<u.maxHp)||findTarget(side,lane);if(a){a.hp=Math.min(a.maxHp,a.hp+3);a.attack++;addLog(`${a.name}이 회복하고 강화되었습니다.`)}else notify("강화할 아군 유닛이 없습니다.");break}
+   case"ambush":for(let i=0;i<2;i++)if(p.board[lane].length<5)p.board[lane].push({...makeCard("minions"),owner:side,hp:2,maxHp:2,canAttack:false,attacked:false,guard:false,shield:false,frozen:0});addLog("매복 미니언이 전장에 합류했습니다.");break;
+   case"freeze":state[enemy].board[lane].forEach(u=>u.frozen=1);addLog(`${LANES[lane].name}의 적 유닛이 동결되었습니다.`);break;
+   case"gold":addGold(side,3);drawCard(side);break;
+   case"ignite":damageNexus(enemy,4);addLog("불꽃 낙인! 적 넥서스 피해 4.");break;
+   case"cleanse":healNexus(side,5);addLog("정화의 파동! 넥서스 체력 5 회복.");break;
+   case"banner":p.board.forEach(l=>l.forEach(u=>u.attack++));addLog("모든 아군 유닛의 공격력이 1 증가했습니다.");break;
+   case"recall":{const a=findTarget(side,lane);if(a){p.board[lane]=p.board[lane].filter(u=>u.uid!==a.uid);p.hand.push(makeCard(a.id));drawCard(side);addLog(`${a.name}을 손패로 되돌렸습니다.`)}else notify("되돌릴 아군 유닛이 없습니다.");break}
+   case"smite":p.obj+=2;addLog("강타로 오브젝트 점수 2 획득.");break;
+   case"ward":addGold(side,1);state[enemy].nextWeak=true;addLog("시야 와드 설치! 골드 1 획득.");break;
+  }
+  cleanBoard(enemy);cleanBoard(side);
+ }
+ return true;
 }
-function template(champ,team){
-  return {...champ,team,maxHp:champ.hp,hp:champ.hp,guard:false,skillReady:true};
+function playCard(index,lane){
+ if(!state||state.phase!=="playing"||state.active!=="player"||state.locked)return;
+ const p=state.player,card=p.hand[index];if(!card)return;
+ if(card.cost>p.mana){notify("마나가 부족합니다.");return}
+ if(card.type==="unit"&&p.board[lane].length>=5){notify("해당 라인의 유닛이 가득 찼습니다.");return}
+ if(card.type==="spell"&&["barrier","recall"].includes(card.effect)&&!p.board[lane].length){notify("이 주문을 사용할 아군 유닛이 해당 라인에 없습니다.");return}
+ p.mana-=card.cost;p.hand.splice(index,1);
+ const ok=resolveDeploy("player",card,lane);
+ if(!ok){p.mana+=card.cost;p.hand.splice(index,0,card);return}
+ selectedCardIndex=null;state.selected=null;renderAll();checkGameOver();
 }
-function byId(id){return CHAMPS.find(c=>c.id===id)}
-function alive(team){return team.filter(c=>c.hp>0)}
-function currentActor(){
-  const team=state.turn==="blue"?state.blue:state.red;
-  const active=state.turn==="blue"?state.activeBlue:state.activeRed;
-  return team[active]&&team[active].hp>0?team[active]:team.find(c=>c.hp>0);
+function selectCard(index){
+ const c=state.player.hand[index];if(!c)return;
+ if(selectedCardIndex===index){openCardDetail(c,index);return}
+ selectedCardIndex=index;state.selected=c;renderAll();showSelectedInfo(c);
+ notify(`${c.name} 선택됨 — 사용할 라인을 선택하세요.`);
 }
-function addLog(msg,type=""){
-  state.log.push({msg,type});
-  if(state.log.length>150)state.log.shift();
-  renderLog();
+function openCardDetail(card,index){
+ $("modalTitle").textContent=card.name;
+ $("modalBody").innerHTML=`<div class="detail-grid"><div class="detail-art" style="color:${card.accent||"#e7c879"}">${card.emoji}</div><div><span class="pill ${card.type==="unit"?"blue":"gold"}">${card.type==="unit"?"챔피언 / 유닛":"주문 카드"}</span><div class="detail-stat-row"><span class="resource">💧 비용 <b>${card.cost}</b></span>${card.type==="unit"?`<span class="resource">⚔️ 공격 <b>${card.attack}</b></span><span class="resource">❤️ 체력 <b>${card.hp}</b></span>`:""}<span class="resource">${card.rarity||"일반"}</span></div><p class="detail-copy">${card.desc}</p><h4>전술 해설</h4><p class="detail-copy">${card.detail||"전장 상황에 맞춰 사용하세요."}</p><div class="detail-stat-row">${(card.tags||[]).map(t=>`<span class="tag">${t}</span>`).join("")}</div></div></div>`;
+ $("modalFoot").innerHTML=`<button class="btn" id="detailCloseBtn">닫기</button><button class="btn primary" id="detailUseBtn">카드 선택</button>`;
+ $("modalOverlay").classList.add("open");
+ $("detailCloseBtn").onclick=closeModal;$("detailUseBtn").onclick=()=>{closeModal();if(index!==undefined)selectCard(index)};
+}
+function closeModal(){$("modalOverlay").classList.remove("open")}
+function showSelectedInfo(c){
+ $("selectedInfo").innerHTML=`<div style="display:flex;gap:10px;align-items:center"><div style="font-size:32px">${c.emoji}</div><div><b style="font-size:12px">${c.name}</b><div class="note">${c.type==="unit"?"챔피언 유닛":"전술 주문"} · 비용 ${c.cost}</div></div></div><p class="note" style="margin:10px 0">${c.desc}</p><button class="btn small" id="detailOpenFromSide">상세 정보</button>`;
+ $("detailOpenFromSide").onclick=()=>openCardDetail(c,selectedCardIndex);
+}
+function renderDecks(){
+ $("deckGrid").innerHTML=DECKS.map(d=>`<button class="deck-choice" data-deck="${d.id}" style="border-color:${selectedDeck===d.id?d.color:"#30445c"};box-shadow:${selectedDeck===d.id?"0 0 0 1px "+d.color+"50":"none"}"><div style="display:flex;justify-content:space-between;align-items:center"><span class="emoji">${d.emoji}</span><span class="pill" style="color:${d.color}">${d.style}</span></div><h4>${d.name} ${selectedDeck===d.id?"✓":""}</h4><p>${d.desc}</p><p style="margin-top:9px;color:${d.color}">전략: ${d.plan}</p></button>`).join("");
+ document.querySelectorAll("[data-deck]").forEach(b=>b.onclick=()=>{selectedDeck=b.dataset.deck;renderDecks()});
+}
+function renderLanes(){
+ $("lanes").innerHTML=LANES.map(l=>{
+ const p=state.player.board[l.id],e=state.enemy.board[l.id];
+ const myPower=p.reduce((n,u)=>n+u.attack,0),enemyPower=e.reduce((n,u)=>n+u.attack,0);
+ const pct=clamp((myPower/(myPower+enemyPower||1))*100,0,100);
+ return `<div class="lane" data-lane="${l.id}" style="border-color:${chosenLane===l.id?"#e7c879":"#34475d"};box-shadow:${chosenLane===l.id?"0 0 0 1px #e7c87940":"none"}"><div class="lane-head"><span>${l.emoji} ${l.name}</span><span style="color:${myPower>=enemyPower?"#7bdcb4":"#ff929b"}">${myPower} : ${enemyPower}</span></div><div class="lane-track"><i style="width:${pct}%"></i></div><div style="font-size:9px;color:#83caff;margin-bottom:4px">BLUE</div><div class="lane-units">${p.length?p.map(u=>`<div class="unit-token" title="${u.name} · 공격 ${u.attack} · 체력 ${u.hp}/${u.maxHp}">${u.emoji}<small>${u.hp}</small></div>`).join(""):'<span style="font-size:10px;color:#53667d">비어 있음</span>'}</div><div style="font-size:9px;color:#ff9ca4;margin:5px 0 4px">RED</div><div class="lane-units">${e.length?e.map(u=>`<div class="unit-token enemy" title="${u.name} · 공격 ${u.attack} · 체력 ${u.hp}/${u.maxHp}">${u.emoji}<small>${u.hp}</small></div>`).join(""):'<span style="font-size:10px;color:#53667d">비어 있음</span>'}</div><div class="lane-foot">${chosenLane===l.id?"선택된 라인 · 카드 사용 가능":`아군 ${p.length}/5 · 적군 ${e.length}/5`}</div></div>`;
+ }).join("");
+ document.querySelectorAll("[data-lane]").forEach(el=>el.onclick=()=>onLaneClick(Number(el.dataset.lane)));
+}
+function renderHand(){
+ const p=state.player;
+ $("handCount").textContent=`${p.hand.length}장 · 덱 ${p.deck.length}`;
+ if(!p.hand.length){$("hand").innerHTML='<div class="empty-hand">손패가 비었습니다. 턴을 종료하거나 골드로 카드를 뽑으세요.</div>';return}
+ $("hand").innerHTML=p.hand.map((c,i)=>`<button class="card ${selectedCardIndex===i?"selected":""}" data-card="${i}" style="--accent:${c.accent||"#7bc8e8"}"><div class="card-art"><span class="card-cost">${c.cost}</span><span>${c.emoji}</span><span class="card-type">${c.type==="unit"?"UNIT":"SPELL"}</span></div><div class="card-content"><div class="card-name">${c.name}</div><div class="card-desc">${c.desc}</div>${c.type==="unit"?`<div class="card-stats"><span>⚔ ${c.attack} 공격</span><span>♥ ${c.hp} 체력</span></div>`:""}<div class="card-footer"><span class="tag">${c.rarity||"일반"}</span><span class="card-action">${c.cost<=p.mana?"사용 가능":"마나 부족"}</span></div></div></button>`).join("");
+ document.querySelectorAll("[data-card]").forEach(el=>el.onclick=()=>selectCard(Number(el.dataset.card)));
 }
 function renderLog(){
-  $("battleLog").innerHTML=state.log.map(x=>
-    `<div class="log-line ${x.type}">${escapeHtml(x.msg)}</div>`
-  ).join("");
-  $("battleLog").scrollTop=$("battleLog").scrollHeight;
+ if(!state)return;
+ $("logList").style.display=logVisible?"block":"none";
+ $("clearLogBtn").textContent=logVisible?"기록 접기":"기록 펼치기";
+ $("logList").innerHTML=state.log.map(x=>`<div class="log-entry"><strong>[${x.turn}턴]</strong> ${x.text}</div>`).join("");
 }
-function escapeHtml(s){
-  return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function renderObjective(){
+ const o=OBJECTIVES[state.objective];
+ $("objectiveBox").innerHTML=`<div class="objective"><div class="objective-icon">${o.emoji}</div><div><h4>${o.name}</h4><p>${o.desc}</p><p style="color:var(--gold);margin-top:5px">보상: ${o.reward}</p></div></div><div class="panel-body"><div class="hp-label"><span>오브젝트 경쟁</span><b>${state.objectiveOwner?ownerName(state.objectiveOwner):"중립"}</b></div><div class="bar"><i style="width:${clamp((state.objectiveProgress.player/(state.objectiveProgress.player+state.objectiveProgress.enemy||1))*100,0,100)}%;background:#61c9f0"></i></div><div class="resource-row"><span class="resource">🔵 블루 <b>${state.objectiveProgress.player}</b></span><span class="resource">🔴 레드 <b>${state.objectiveProgress.enemy}</b></span></div></div>`;
 }
-function setScreen(screen){
-  ["setup","draftPanel","battlePanel"].forEach(id=>$(id).classList.add("hidden"));
-  $(screen).classList.remove("hidden");
+function renderAll(){
+ if(!state)return;
+ const p=state.player,e=state.enemy;
+ $("playerHpLabel").textContent=`${p.hp}/${p.maxHp}`;$("playerNexusText").textContent=`${p.hp} / ${p.maxHp}`;$("playerHpBar").style.width=`${p.hp/p.maxHp*100}%`;
+ $("enemyHpLabel").textContent=`${e.hp}/${e.maxHp}`;$("enemyNexusText").textContent=`${e.hp} / ${e.maxHp}`;$("enemyHpBar").style.width=`${e.hp/e.maxHp*100}%`;
+ $("manaText").textContent=`${p.mana}/${p.maxMana}`;$("goldText").textContent=p.gold;$("enemyManaText").textContent=`${e.mana}/${e.maxMana}`;$("enemyObjText").textContent=e.obj;
+ $("turnPill").textContent=`${state.turn}턴 · ${state.active==="player"?"플레이어 차례":"AI 행동 중"}`;
+ $("endTurnBtn").disabled=state.active!=="player"||state.locked;$("drawBtn").disabled=state.active!=="player"||p.gold<2||p.hand.length>=9;
+ $("myUnits").textContent=totalUnits("player");$("enemyUnits").textContent=totalUnits("enemy");
+ $("myLanes").textContent=LANES.filter(l=>livingCount("player",l.id)>livingCount("enemy",l.id)).length+" / 3";$("myObjectives").textContent=p.obj;
+ renderLanes();renderHand();renderObjective();renderLog();
+ if(state.selected)showSelectedInfo(state.selected);
 }
-function startGame(){
-  state.difficulty=Number($("difficulty").value);
-  state.blue=[];state.red=[];state.bans=[];state.phase=0;
-  state.available=CHAMPS.map(c=>c.id);state.log=[];
-  state.turn="blue";state.turnCount=1;state.round=1;
-  state.activeBlue=0;state.activeRed=0;state.gameOver=false;
-  state.currentAction=null;
-  if($("mode").value==="quick"){
-    const pool=shuffle(CHAMPS);
-    state.blue=pool.slice(0,3).map(c=>template(c,"blue"));
-    state.red=pool.slice(3,6).map(c=>template(c,"red"));
-    beginBattle();
-  }else{
-    setScreen("draftPanel");
-    renderDraft();
-    processRedSteps();
+function onLaneClick(lane){
+ chosenLane=lane;
+ if(selectedCardIndex!==null){playCard(selectedCardIndex,lane);return}
+ renderLanes();notify(`${LANES[lane].name} 선택됨. 먼저 손패 카드를 선택하세요.`);
+}
+function updateTip(){
+ const tips=["상대가 강한 유닛을 한 라인에 모았다면 광역 주문을 고려하세요.","빈 라인에 유닛이 살아남으면 전투 단계에서 적 넥서스를 공격합니다.","마나를 모두 쓰는 것보다 다음 턴을 위한 카드와 라인 구성을 생각하세요.","드래곤 오브젝트는 보너스 자원을 줍니다. 오브젝트 점수는 동률일 때도 도움이 됩니다.","체력이 낮은 고공격 유닛은 주문으로 제거하면 교환 이득을 얻기 쉽습니다.","수호 유닛 뒤에 고화력 유닛을 배치하는 대신 라인별 제한을 고려하세요."];
+ $("tipText").textContent=rand(tips);
+}
+function playerEndTurn(){
+ if(!state||state.active!=="player"||state.locked)return;
+ state.locked=true;state.active="enemy";addLog("플레이어가 턴을 종료했습니다.");renderAll();
+ setTimeout(enemyTurn,500);
+}
+function enemyTurn(){
+ if(!state||state.phase!=="playing")return;
+ const e=state.enemy;e.maxMana=Math.min(10,e.maxMana+1+e.bonusMana);e.bonusMana=0;e.mana=e.maxMana;e.gold+=1;
+ if(state.turn>1)drawCard("enemy");
+ const difficulty=state.difficulty;
+ let plays=0;
+ while(e.hand.length&&plays<5){
+  const playable=e.hand.filter(c=>c.cost<=e.mana);
+  if(!playable.length)break;
+  let ranked=playable.map(c=>({c,score:aiCardScore(c)})).sort((a,b)=>b.score-a.score);
+  if(difficulty==="easy"&&Math.random()<.35)ranked=shuffle(ranked);
+  if(difficulty==="normal"&&Math.random()<.16)ranked=shuffle(ranked);
+  const card=ranked[0].c;
+  let lane=chooseAiLane(card);
+  if(card.type==="unit"&&e.board[lane].length>=5){lane=[0,1,2].find(i=>e.board[i].length<5);if(lane===undefined)break}
+  if(card.type==="spell"&&["barrier","recall"].includes(card.effect)&&!e.board[lane].length){lane=[0,1,2].find(i=>e.board[i].length>0)??lane}
+  e.mana-=card.cost;e.hand.splice(e.hand.findIndex(c=>c.uid===card.uid),1);
+  resolveDeploy("enemy",card,lane);plays++;
+  if(e.hp<=0||state.player.hp<=0)break;
+ }
+ if(state.phase!=="playing")return;
+ combatPhase();
+ if(state.phase!=="playing")return;
+ objectivePhase();
+ if(state.phase!=="playing")return;
+ endRound();
+ if(state.phase!=="playing")return;
+ state.turn++;state.active="player";state.locked=false;
+ const p=state.player;p.maxMana=Math.min(10,p.maxMana+1+p.bonusMana);p.bonusMana=0;p.mana=p.maxMana;p.gold+=1;
+ drawCard("player");
+ state.objective=(state.objective+1)%OBJECTIVES.length;
+ state.objectiveOwner=null;state.objectiveProgress={player:0,enemy:0};
+ addLog(`턴 ${state.turn} 시작! 마나가 ${p.mana}로 회복되었습니다.`);
+ selectedCardIndex=null;state.selected=null;chosenLane=null;updateTip();renderAll();checkGameOver();
+}
+function aiCardScore(c){
+ const e=state.enemy,p=state.player;
+ let score=(c.type==="unit"?c.attack*.8+c.hp*.55:1)+Math.random()*.8;
+ if(c.effect==="ignite")score+=p.hp<=8?8:2;
+ if(c.effect==="meteor")score+=p.board.reduce((n,l)=>n+l.length,0)*1.4;
+ if(c.effect==="cleanse")score+=e.hp<18?4:0;
+ if(c.effect==="gold")score+=2;
+ if(c.effect==="dragon")score+=5;
+ if(c.effect==="execute"&&p.board.some(l=>l.some(u=>u.hp<=2)))score+=4;
+ if(c.effect==="smite")score+=2;
+ return score;
+}
+function chooseAiLane(card){
+ const e=state.enemy,p=state.player;
+ let best=0,bestScore=-Infinity;
+ for(let i=0;i<3;i++){
+  if(card.type==="unit"&&e.board[i].length>=5)continue;
+  let score=(p.board[i].reduce((n,u)=>n+u.attack,0)-e.board[i].reduce((n,u)=>n+u.attack,0))*.45;
+  score+=Math.random()*(state.difficulty==="hard"?.3:2.2);
+  if(card.type==="unit")score+=Math.max(0,4-e.board[i].length)*.25;
+  if(["meteor","freeze","bolt"].includes(card.effect))score+=p.board[i].length*1.5;
+  if(["barrier","recall"].includes(card.effect))score+=e.board[i].length?1:-10;
+  if(score>bestScore){bestScore=score;best=i}
+ }
+ return best;
+}
+function combatPhase(){
+ addLog("⚔️ 전투 단계 시작!");
+ for(let lane=0;lane<3;lane++){
+  const blue=[...state.player.board[lane]],red=[...state.enemy.board[lane]];
+  const bluePower=blue.reduce((n,u)=>n+u.attack,0),redPower=red.reduce((n,u)=>n+u.attack,0);
+  if(!blue.length&&red.length){const dmg=red.reduce((n,u)=>n+u.attack,0);damageNexus("player",dmg);addLog(`${LANES[lane].name}: 적이 빈 라인을 돌파해 넥서스 피해 ${dmg}.`)}
+  else if(!red.length&&blue.length){let dmg=blue.reduce((n,u)=>n+u.attack,0);if(state.player.herald>0){dmg+=state.player.herald;state.player.herald=0}damageNexus("enemy",dmg);addLog(`${LANES[lane].name}: 아군이 빈 라인을 돌파해 넥서스 피해 ${dmg}.`)}
+  else if(blue.length&&red.length){
+   if(bluePower>redPower)addLog(`${LANES[lane].name}: 블루 팀이 전투 우위를 점했습니다.`);
+   else if(redPower>bluePower)addLog(`${LANES[lane].name}: 레드 팀이 전투 우위를 점했습니다.`);
+   else addLog(`${LANES[lane].name}: 팽팽한 전투가 이어집니다.`);
+   blue.forEach(u=>{if(u.frozen>0){u.frozen--;return}const target=findTarget("enemy",lane);if(target)damageUnit(target,u.attack)});
+   red.forEach(u=>{if(u.frozen>0){u.frozen--;return}const target=findTarget("player",lane);if(target)damageUnit(target,u.attack)});
+   cleanBoard("player");cleanBoard("enemy");
   }
+ }
 }
-function currentStep(){return DRAFT_STEPS[state.phase]}
-function renderDraft(){
-  const step=currentStep();
-  if(!step){
-    beginBattle();return;
-  }
-  const isBlue=step.team==="blue";
-  $("draftStatus").innerHTML=
-    `<strong style="color:${isBlue?"var(--blue)":"var(--red)"}">${step.label}</strong><br>`+
-    (isBlue?"챔피언을 직접 선택해.":"레드팀 AI가 선택하는 중…");
-  $("draftCount").textContent=`${state.phase+1} / ${DRAFT_STEPS.length}`;
-  $("remaining").textContent=`선택 불가 ${state.bans.length}명`;
-  $("champGrid").innerHTML="";
-  CHAMPS.forEach(c=>{
-    const unavailable=state.bans.includes(c.id)||
-      state.blue.some(x=>x.id===c.id)||state.red.some(x=>x.id===c.id);
-    const btn=document.createElement("button");
-    btn.className="champ"+(unavailable?" banned":"");
-    btn.disabled=unavailable||!isBlue;
-    btn.innerHTML=`<span class="emoji">${c.emoji}</span><span class="name">${c.name}</span><div class="role">${c.role}</div>`;
-    btn.onclick=()=>chooseDraft(c.id);
-    $("champGrid").appendChild(btn);
-  });
-  $("autoDraft").disabled=!isBlue;
+function objectivePhase(){
+ const bluePower=state.player.board.reduce((n,l)=>n+l.reduce((m,u)=>m+u.attack,0),0);
+ const redPower=state.enemy.board.reduce((n,l)=>n+l.reduce((m,u)=>m+u.attack,0),0);
+ const pScore=bluePower+state.player.obj*.4,eScore=redPower+state.enemy.obj*.4;
+ if(pScore>eScore+1){state.objectiveProgress.player++;addLog(`블루 팀이 ${OBJECTIVES[state.objective].name} 경쟁에서 앞섭니다.`)}
+ else if(eScore>pScore+1){state.objectiveProgress.enemy++;addLog(`레드 팀이 ${OBJECTIVES[state.objective].name} 경쟁에서 앞섭니다.`)}
+ if(state.objectiveProgress.player>=2){claimObjective("player")}
+ else if(state.objectiveProgress.enemy>=2){claimObjective("enemy")}
 }
-function processRedSteps(){
-  while(state.phase<DRAFT_STEPS.length&&currentStep().team==="red"){
-    const step=currentStep();
-    const options=CHAMPS.filter(c=>
-      !state.bans.includes(c.id)&&
-      !state.blue.some(x=>x.id===c.id)&&
-      !state.red.some(x=>x.id===c.id)
-    );
-    if(!options.length)break;
-    const choice=aiDraftChoice(options,step.type);
-    commitDraft(choice.id);
-  }
-  renderDraft();
+function claimObjective(side){
+ const p=state[side],o=OBJECTIVES[state.objective];state.objectiveOwner=side;p.obj+=state.objective===0?2:1;
+ if(state.objective===0){addGold(side,2)}
+ if(state.objective===1)p.herald+=3;
+ if(state.objective===2){healNexus(side,4);drawCard(side)}
+ addLog(`${ownerName(side)}가 ${o.name}을 차지했습니다! (${o.reward})`);
 }
-function aiDraftChoice(options,type){
-  if(type==="ban"){
-    const threats=state.blue.length?state.blue:options;
-    const target=threats.slice().sort((a,b)=>(b.atk+b.power*8)-(a.atk+a.power*8))[0];
-    return options.find(c=>c.id===target.id)||options[Math.floor(Math.random()*options.length)];
-  }
-  return options.slice().sort((a,b)=>champScore(b)-champScore(a))
-    .slice(0,Math.max(1,4-state.difficulty))[Math.floor(Math.random()*Math.min(options.length,Math.max(1,4-state.difficulty)))];
-}
-function champScore(c){
-  return c.atk*1.2+c.def*1.6+c.hp*.12+c.power*8;
-}
-function chooseDraft(id){
-  const step=currentStep();
-  if(!step||step.team!=="blue")return;
-  const c=byId(id);if(!c)return;
-  commitDraft(id);
-  if(state.phase>=DRAFT_STEPS.length){beginBattle();return}
-  processRedSteps();
-}
-function commitDraft(id){
-  const step=currentStep(),c=byId(id);
-  if(!step||!c)return;
-  if(step.type==="ban"){
-    state.bans.push(id);
-    addDraftMessage(`${step.team==="blue"?"블루팀":"레드팀"}이 ${c.name} 밴`);
-  }else{
-    (step.team==="blue"?state.blue:state.red).push(template(c,step.team));
-    addDraftMessage(`${step.team==="blue"?"블루팀":"레드팀"}이 ${c.name} 선택`);
-  }
-  state.phase++;
-}
-function addDraftMessage(msg){
-  $("draftStatus").innerHTML+=`<div class="small">${escapeHtml(msg)}</div>`;
-}
-function autoDraft(){
-  while(state.phase<DRAFT_STEPS.length){
-    const step=currentStep();
-    const options=CHAMPS.filter(c=>
-      !state.bans.includes(c.id)&&
-      !state.blue.some(x=>x.id===c.id)&&
-      !state.red.some(x=>x.id===c.id)
-    );
-    if(!options.length)break;
-    let c;
-    if(step.team==="red")c=aiDraftChoice(options,step.type);
-    else if(step.type==="ban")c=options.slice().sort((a,b)=>champScore(b)-champScore(a))[0];
-    else c=options.slice().sort((a,b)=>champScore(b)-champScore(a))[0];
-    commitDraft(c.id);
-  }
-  beginBattle();
-}
-function beginBattle(){
-  setScreen("battlePanel");
-  state.stage="battle";
-  state.turn="blue";state.turnCount=1;state.round=1;
-  state.activeBlue=0;state.activeRed=0;
-  addLog("전투 시작! 블루팀이 먼저 행동한다.","system");
-  addLog(`AI 난이도: ${DIFF_NAMES[state.difficulty]}`,"system");
-  renderBattle();
-}
-function renderBattle(){
-  $("blueUnits").innerHTML=state.blue.map((c,i)=>unitHTML(c,i,"blue")).join("");
-  $("redUnits").innerHTML=state.red.map((c,i)=>unitHTML(c,i,"red")).join("");
-  $("roundLabel").textContent=`${state.round}라운드`;
-  const actor=currentActor();
-  $("turnTitle").textContent=state.gameOver?"전투 종료":state.turn==="blue"?"블루팀의 차례":"레드팀 AI의 차례";
-  $("turnTitle").style.color=state.turn==="blue"?"var(--blue)":"var(--red)";
-  $("turnNumber").textContent=`행동 ${state.turnCount}`;
-  $("turnHint").textContent=actor?`${actor.emoji} ${actor.name} · HP ${Math.ceil(actor.hp)} / ${actor.maxHp}`:"행동 가능한 챔피언 없음";
-  document.querySelectorAll("[data-action]").forEach(b=>{
-    b.disabled=state.gameOver||state.turn!=="blue"||!actor;
-  });
-  if(state.gameOver)document.querySelectorAll("[data-action]").forEach(b=>b.disabled=true);
-}
-function unitHTML(c,i,team){
-  const pct=Math.max(0,c.hp/c.maxHp*100);
-  const dead=c.hp<=0;
-  return `<div class="unit" style="${dead?"opacity:.35":""}">
-    <div class="unit-top"><span>${c.emoji} ${c.name}${dead?" ✕":""}</span><span>${Math.max(0,Math.ceil(c.hp))}/${c.maxHp}</span></div>
-    <div class="hpbar"><div class="hpfill" style="width:${pct}%"></div></div>
-    <div class="stats">공격 ${c.atk} · 방어 ${c.def} · ${c.role}</div>
-  </div>`;
-}
-function selectAction(action){
-  if(state.gameOver||state.turn!=="blue")return;
-  const actor=currentActor();if(!actor)return;
-  state.currentAction=action;
-  if(action==="guard"||action==="rest"){
-    hideTargets();
-    performAction(actor,action,null);
-    return;
-  }
-  const targets=alive(state.red);
-  $("targetBox").classList.remove("hidden");
-  $("targetButtons").innerHTML=targets.map(t=>
-    `<button class="red" data-target="${t.id}">${t.emoji} ${t.name}<br><span class="small">HP ${Math.ceil(t.hp)}/${t.maxHp}</span></button>`
-  ).join("");
-  $("targetButtons").querySelectorAll("[data-target]").forEach(btn=>{
-    btn.onclick=()=>{
-      const target=state.red.find(c=>c.id===btn.dataset.target&&c.hp>0);
-      if(target)performAction(actor,action,target);
-    };
-  });
-}
-function hideTargets(){
-  $("targetBox").classList.add("hidden");
-  $("targetButtons").innerHTML="";
-}
-function damage(attacker,target,amount){
-  const raw=Math.max(1,Math.round(amount-target.def*.45));
-  const reduced=target.guard?Math.ceil(raw*.35):raw;
-  target.hp=Math.max(0,target.hp-reduced);
-  target.guard=false;
-  return reduced;
-}
-function performAction(actor,action,target){
-  if(state.gameOver||actor.hp<=0)return;
-  if(action==="attack"){
-    const d=damage(actor,target,actor.atk*(1+Math.random()*.18));
-    addLog(`${actor.name}의 공격! ${target.name}에게 ${d} 피해.`, "good");
-  }else if(action==="skill"){
-    if(actor.id==="soraka"||actor.id==="nami"||actor.id==="sona"||actor.id==="ahri"||actor.id==="warwick"||actor.id==="ekko"){
-      const heal=Math.round(actor.maxHp*.22);
-      actor.hp=Math.min(actor.maxHp,actor.hp+heal);
-      if(target){
-        const d=damage(actor,target,actor.atk*actor.power*.65);
-        addLog(`${actor.name}의 ${actor.skill}! 회복 ${heal}, ${target.name}에게 ${d} 피해.`, "good");
-      }else addLog(`${actor.name}의 ${actor.skill}! 체력 ${heal} 회복.`, "good");
-    }else{
-      const d=damage(actor,target,actor.atk*actor.power*(1+Math.random()*.12));
-      addLog(`${actor.name}의 ${actor.skill}! ${target.name}에게 ${d} 피해.`, "good");
-    }
-  }else if(action==="guard"){
-    actor.guard=true;
-    addLog(`${actor.name}이(가) 방어 태세를 취했다. 다음 피해 감소.`, "system");
-  }else if(action==="rest"){
-    const heal=Math.max(8,Math.round(actor.maxHp*.16));
-    actor.hp=Math.min(actor.maxHp,actor.hp+heal);
-    addLog(`${actor.name}이(가) 재정비하여 체력 ${heal} 회복.`, "good");
-  }
-  hideTargets();
-  afterAction();
-}
-function afterAction(){
-  if(checkGameOver())return;
-  state.turnCount++;
-  if(state.turn==="blue"){
-    state.turn="red";
-    renderBattle();
-    setTimeout(aiTurn,450);
-  }else{
-    state.turn="blue";
-    state.round++;
-    state.activeBlue=nextAliveIndex(state.blue,state.activeBlue);
-    state.activeRed=nextAliveIndex(state.red,state.activeRed);
-    renderBattle();
-  }
-}
-function nextAliveIndex(team,current){
-  for(let n=1;n<=team.length;n++){
-    const i=(current+n)%team.length;
-    if(team[i].hp>0)return i;
-  }
-  return current;
-}
-function aiTurn(){
-  if(state.gameOver||state.turn!=="red")return;
-  const actor=currentActor();
-  if(!actor){checkGameOver();return}
-  const targets=alive(state.blue);
-  if(!targets.length){checkGameOver();return}
-  const target=chooseAITarget(targets);
-  const roll=Math.random();
-  let action="attack";
-  const hpRatio=actor.hp/actor.maxHp;
-  if(state.difficulty>=1&&hpRatio<.38&&roll<.38)action="rest";
-  else if(state.difficulty>=2&&hpRatio<.55&&roll<.28)action="guard";
-  else if(state.difficulty===0&&roll<.25)action="guard";
-  else if(roll<(state.difficulty===0?.25:state.difficulty===1?.55:state.difficulty===2?.72:.88))action="skill";
-  if(action==="guard"){
-    actor.guard=true;
-    addLog(`레드팀 ${actor.name}이(가) 방어 태세를 취했다.`,"bad");
-  }else if(action==="rest"){
-    const heal=Math.max(8,Math.round(actor.maxHp*.16));
-    actor.hp=Math.min(actor.maxHp,actor.hp+heal);
-    addLog(`레드팀 ${actor.name}이(가) 체력 ${heal} 회복.`,"bad");
-  }else if(action==="skill"&&(actor.id==="soraka"||actor.id==="nami"||actor.id==="sona"||actor.id==="ahri"||actor.id==="warwick"||actor.id==="ekko")){
-    const heal=Math.round(actor.maxHp*.22);
-    actor.hp=Math.min(actor.maxHp,actor.hp+heal);
-    const d=damage(actor,target,actor.atk*actor.power*.65);
-    addLog(`레드팀 ${actor.name}의 ${actor.skill}! ${target.name}에게 ${d} 피해, 본인 회복 ${heal}.`,"bad");
-  }else{
-    const amount=action==="skill"?actor.atk*actor.power:actor.atk;
-    const d=damage(actor,target,amount*(1+Math.random()*.12));
-    addLog(`레드팀 ${actor.name}의 ${action==="skill"?actor.skill:"일반 공격"}! ${target.name}에게 ${d} 피해.`,"bad");
-  }
-  if(checkGameOver())return;
-  state.turn="blue";
-  state.activeBlue=nextAliveIndex(state.blue,state.activeBlue);
-  state.activeRed=nextAliveIndex(state.red,state.activeRed);
-  renderBattle();
-}
-function chooseAITarget(targets){
-  if(state.difficulty===0)return targets[Math.floor(Math.random()*targets.length)];
-  return targets.slice().sort((a,b)=>{
-    const sa=(a.hp/a.maxHp)*(state.difficulty+1)-a.atk*.008;
-    const sb=(b.hp/b.maxHp)*(state.difficulty+1)-b.atk*.008;
-    return sa-sb;
-  })[0];
+function endRound(){
+ ["player","enemy"].forEach(side=>state[side].board.forEach(l=>l.forEach(u=>{if(u.effect==="income")addGold(side,1);u.attacked=false})));
+ if(state.player.nextWeak){state.enemy.board.forEach(l=>l.forEach(u=>u.attack=Math.max(0,u.attack-1)));state.player.nextWeak=false}
 }
 function checkGameOver(){
-  const b=alive(state.blue),r=alive(state.red);
-  if(b.length&&r.length)return false;
-  state.gameOver=true;
-  state.turn="none";
-  if(b.length){
-    addLog("승리! 레드팀을 모두 쓰러뜨렸다.","system");
-    $("turnTitle").textContent="🏆 블루팀 승리";
-  }else{
-    addLog("패배… 블루팀이 전멸했다.","system");
-    $("turnTitle").textContent="패배";
-  }
-  $("turnHint").textContent=`생존: 블루팀 ${b.length}명 · 레드팀 ${r.length}명`;
-  document.querySelectorAll("[data-action]").forEach(x=>x.disabled=true);
-  hideTargets();
-  renderBattle();
-  return true;
+ if(!state||state.phase!=="playing")return;
+ if(state.player.hp<=0||state.enemy.hp<=0){
+  state.phase="ended";const win=state.enemy.hp<=0&&state.player.hp>0;
+  showResult(win);return true;
+ }
+ return false;
 }
-document.querySelectorAll("[data-action]").forEach(btn=>{
-  btn.addEventListener("click",()=>selectAction(btn.dataset.action));
-});
-$("startBtn").addEventListener("click",startGame);
-$("autoDraft").addEventListener("click",autoDraft);
-$("restartBtn").addEventListener("click",()=>{
-  state.stage="setup";setScreen("setup");
-});
-$("clearLog").addEventListener("click",()=>{
-  state.log=[];renderLog();
-  addLog("전투 기록을 비웠다.","system");
-});
+function showResult(win){
+ $("modalTitle").textContent=win?"승리 — 넥서스 파괴":"패배 — 전선 붕괴";
+ $("modalBody").innerHTML=`<div style="text-align:center;padding:20px"><div style="font-size:64px">${win?"🏆":"🛡️"}</div><div class="result-title" style="color:${win?"#e7c879":"#ff929b"}">${win?"VICTORY":"DEFEAT"}</div><p class="result-sub">${win?"전술적 판단으로 적 넥서스를 파괴했습니다.":"이번 전투는 패배했지만, 다른 덱과 전략으로 다시 도전할 수 있습니다."}<br>전투 턴: ${state.turn} · 오브젝트 점수: ${state.player.obj} : ${state.enemy.obj}</p></div>`;
+ $("modalFoot").innerHTML='<button class="btn" id="resultHome">메인 메뉴</button><button class="btn primary" id="resultAgain">다시 전투</button>';
+ $("modalOverlay").classList.add("open");
+ $("resultHome").onclick=()=>{closeModal();showScreen("homeScreen");state=null};
+ $("resultAgain").onclick=()=>{closeModal();newState()};
+}
+function showRules(){
+ $("modalTitle").textContent="게임 규칙 · 빠른 안내";
+ $("modalBody").innerHTML=`<div class="rules-grid">
+ <div class="rule"><b>1. 승리 조건</b><p>적 넥서스 체력을 0으로 만들면 승리합니다. 빈 라인에 살아남은 유닛은 전투 단계에서 넥서스를 공격합니다.</p></div>
+ <div class="rule"><b>2. 마나와 턴</b><p>턴이 시작될 때 최대 마나가 1 증가하며 마나가 회복됩니다. 카드는 비용만큼 마나를 소모합니다.</p></div>
+ <div class="rule"><b>3. 카드 사용</b><p>손패 카드를 누른 뒤 상단·중앙·하단 라인을 선택하세요. 유닛은 라인당 최대 5기까지 배치할 수 있습니다.</p></div>
+ <div class="rule"><b>4. 전투</b><p>양 팀 유닛이 같은 라인에 있으면 서로 공격합니다. 공격은 현재 체력이 가장 높은 적 유닛부터 집중됩니다.</p></div>
+ <div class="rule"><b>5. 오브젝트</b><p>전투력이 높은 팀이 오브젝트 경쟁을 유리하게 이끕니다. 두 번 우세하면 드래곤·전령·제단 보상을 얻습니다.</p></div>
+ <div class="rule"><b>6. 골드</b><p>턴마다 골드 1을 얻습니다. 골드 2를 지불하면 카드를 한 장 더 뽑을 수 있습니다.</p></div>
+ <div class="rule"><b>7. 주문 카드</b><p>주문은 사용 후 즉시 효과를 발휘합니다. 회복·강화·직접 피해·광역 피해를 상황에 맞게 활용하세요.</p></div>
+ <div class="rule"><b>8. AI 난이도</b><p>쉬움은 무작위 선택이 잦고, 보통은 기본 판단을 하며, 어려움은 상대 전력과 카드 효과를 더 적극적으로 고려합니다.</p></div>
+ </div>`;
+ $("modalFoot").innerHTML='<button class="btn primary" id="rulesOk">확인</button>';
+ $("modalOverlay").classList.add("open");$("rulesOk").onclick=closeModal;
+}
+function showCollection(){
+ $("modalTitle").textContent="카드 도감";
+ $("modalBody").innerHTML=`<p class="note">현재 게임에서 사용할 수 있는 모든 오리지널 카드입니다. 카드를 선택하면 비용과 효과를 확인할 수 있습니다.</p><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:8px;margin-top:14px">${CARD_LIBRARY.map(c=>`<button class="deck-choice" data-collection="${c.id}" style="min-height:100px;padding:11px"><div style="display:flex;align-items:center;gap:8px"><span style="font-size:27px">${c.emoji}</span><div><b style="font-size:12px">${c.name}</b><div class="note">비용 ${c.cost} · ${c.type==="unit"?"유닛":"주문"}</div></div></div><p style="margin-top:8px">${c.desc}</p></button>`).join("")}</div>`;
+ $("modalFoot").innerHTML='<button class="btn primary" id="collectionClose">닫기</button>';
+ $("modalOverlay").classList.add("open");$("collectionClose").onclick=closeModal;
+ document.querySelectorAll("[data-collection]").forEach(b=>b.onclick=()=>{const c=cardById(b.dataset.collection);openCardDetail(c,undefined)});
+}
+function drawForGold(){
+ if(!state||state.active!=="player"||state.locked)return;
+ const p=state.player;if(p.gold<2){notify("골드가 부족합니다.");return}
+ if(p.hand.length>=9){notify("손패가 가득 찼습니다.");return}
+ p.gold-=2;drawCard("player");renderAll();
+}
+function surrender(){
+ if(!state||state.phase!=="playing")return;
+ $("modalTitle").textContent="항복하시겠습니까?";
+ $("modalBody").innerHTML='<p class="detail-copy">현재 전투를 종료하고 메인 메뉴로 돌아갑니다. 진행 중인 전투는 저장되지 않습니다.</p>';
+ $("modalFoot").innerHTML='<button class="btn" id="cancelSurrender">계속 전투</button><button class="btn danger" id="confirmSurrender">항복</button>';
+ $("modalOverlay").classList.add("open");$("cancelSurrender").onclick=closeModal;$("confirmSurrender").onclick=()=>{closeModal();state.phase="ended";showScreen("homeScreen");state=null};
+}
+$("startBtn").onclick=newState;
+$("homeBtn").onclick=()=>{if(state&&state.phase==="playing"){if(!confirm("메인 메뉴로 돌아가면 현재 전투가 종료됩니다. 계속할까요?"))return}state=null;showScreen("homeScreen")};
+$("rulesBtn").onclick=showRules;$("tutorialBtn").onclick=showRules;$("collectionBtn").onclick=showCollection;
+$("modalClose").onclick=closeModal;$("modalOverlay").addEventListener("click",e=>{if(e.target===$("modalOverlay"))closeModal()});
+$("endTurnBtn").onclick=playerEndTurn;$("drawBtn").onclick=drawForGold;$("surrenderBtn").onclick=surrender;
+$("clearLogBtn").onclick=()=>{logVisible=!logVisible;renderLog()};
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closeModal();if(e.key==="Enter"&&$("modalOverlay").classList.contains("open")===false&&state&&state.active==="player"){}});
+renderDecks();
 </script>
 </body>
 </html>
+
