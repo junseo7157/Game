@@ -1,0 +1,444 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>RIFT TACTICS</title>
+<style>
+:root{--bg:#09111e;--panel:#121f32;--panel2:#1a2b43;--line:#30445f;--gold:#d5b778;--blue:#5ab2ff;--red:#ff7082;--green:#61dfa9;--text:#edf4ff;--muted:#94a9c5}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(ellipse at top,#203858 0,#09111e 60%);color:var(--text);font:14px/1.5 system-ui,"Noto Sans KR",sans-serif;min-height:100vh}
+button,input,select{font:inherit}
+button{background:#20334d;color:var(--text);border:1px solid #3a5270;border-radius:10px;padding:10px;cursor:pointer;transition:.15s}
+button:hover:not(:disabled){border-color:var(--gold)}
+button:disabled{opacity:.35;cursor:not-allowed}
+input,select{background:#0b1626;color:var(--text);border:1px solid #3a5270;border-radius:9px;padding:10px;min-width:0}
+.wrap{max-width:1050px;margin:auto;padding:12px}
+header{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:14px}
+.logo{font-size:22px;font-weight:950;letter-spacing:2px}
+.logo span,.gold{color:var(--gold)}
+.muted{color:var(--muted)}
+.small{font-size:11px}
+.pill{border:1px solid var(--line);border-radius:99px;padding:5px 9px;color:var(--muted);font-size:11px}
+.panel{background:linear-gradient(145deg,#17273df5,#101a2af5);border:1px solid var(--line);border-radius:15px;padding:14px;min-width:0}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.setup{display:grid;grid-template-columns:1.1fr .9fr;gap:12px}
+.title{font-size:15px;margin:0 0 12px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.notice{background:#1b2b41;border-radius:9px;padding:10px;font-size:12px;color:#d3dfef;margin:10px 0}
+.primary{background:linear-gradient(135deg,#dfc58a,#ae8c4d);color:#101827;border:0;font-weight:850}
+.wide{width:100%}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+.stat{background:#0b1625;border-radius:9px;padding:9px}
+.stat small{display:block;color:var(--muted);font-size:10px}
+.stat strong{font-size:18px}
+.controls{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+.champ-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;max-height:390px;overflow:auto}
+.champ{position:relative;text-align:left;min-height:83px;padding:8px;background:linear-gradient(145deg,#20334d,#111d2e)}
+.champ.selected{border-color:var(--gold);box-shadow:inset 0 0 0 1px var(--gold)}
+.champ .emoji{font-size:22px;display:block}
+.champ strong{font-size:12px;display:block}
+.champ small{font-size:10px;color:var(--muted)}
+.champ .role{position:absolute;right:4px;top:4px;font-size:9px;color:var(--gold)}
+.teamline,.unitrow{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px}
+.slot{min-height:76px;background:#0b1625;border:1px dashed #3a4c65;border-radius:9px;text-align:center;padding:6px 2px}
+.slot .emoji{font-size:20px}
+.slot b{display:block;font-size:10px}
+.slot small{font-size:9px;color:var(--muted)}
+.slot.filled{border-style:solid;border-color:#466182}
+.phases{display:flex;gap:5px;overflow:auto;margin-bottom:12px}
+.phase{font-size:10px;white-space:nowrap;border:1px solid var(--line);border-radius:7px;padding:6px 8px;color:var(--muted)}
+.phase.active{color:var(--gold);border-color:var(--gold);background:#283448}
+.unit{min-width:0;background:#0b1625;border:1px solid var(--line);border-radius:10px;padding:7px 4px;cursor:pointer;overflow:hidden}
+.unit.active{border-color:var(--gold);box-shadow:0 0 0 1px #d5b77855}
+.unit.dead{opacity:.3;filter:grayscale(1);cursor:not-allowed}
+.unit .emoji{font-size:19px}
+.unitname{font-size:10px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.health{height:7px;border-radius:9px;background:#304055;overflow:hidden;margin:5px 0}
+.health span{height:100%;display:block;background:var(--green);transition:width .2s}
+.enemyhp span{background:var(--red)}
+.hptext{font-size:9px;color:var(--muted)}
+.tag{font-size:9px;color:var(--gold);border:1px solid #3c4f68;border-radius:5px;padding:1px 3px;display:inline-block;margin-top:3px}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.action{text-align:left;min-height:67px}
+.action b{display:block;font-size:12px}
+.action small{font-size:10px;color:var(--muted)}
+.log{font-size:12px;max-height:250px;overflow:auto;color:#cbd9ed}
+.log div{padding:5px 0;border-bottom:1px solid #243249}
+.hidden{display:none!important}
+footer{text-align:center;color:#7186a1;font-size:10px;padding:18px 0}
+@media(max-width:700px){
+ .wrap{padding:8px}.grid,.setup{grid-template-columns:1fr}
+ .champ-grid{grid-template-columns:repeat(3,minmax(0,1fr));max-height:310px}
+ .panel{padding:11px}.logo{font-size:19px}
+ .teamline,.unitrow{gap:3px}.slot{padding:5px 1px;min-height:72px}
+ .unit{padding:5px 2px}.unit .emoji{font-size:17px}
+ .stats{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+ <div><div class="logo">RIFT <span>TACTICS</span></div><div class="muted small">LEAGUE OF LEGENDS · TURN-BASED STRATEGY</div></div>
+ <div class="pill" id="status">게임 준비</div>
+</header>
+
+<section id="setup" class="setup">
+ <div class="panel">
+  <h2 class="title">게임 설정 <span class="gold">CONFIG</span></h2>
+  <div class="notice">블루팀은 직접 밴픽하고 레드팀은 AI가 자동으로 밴픽과 전투를 진행합니다.</div>
+  <label>레드팀 AI 난이도</label>
+  <select id="difficulty" class="wide" style="margin:7px 0 13px">
+   <option value="easy">쉬움 — 무작위에 가까운 판단</option>
+   <option value="normal" selected>보통 — 역할 균형 고려</option>
+   <option value="hard">어려움 — 조합과 상성 고려</option>
+   <option value="expert">아주 어려움 — 정교한 선택과 전술</option>
+  </select>
+  <label>게임 모드</label>
+  <select id="mode" class="wide" style="margin:7px 0 14px">
+   <option value="draft">정식 밴픽</option>
+   <option value="quick">빠른 시작</option>
+  </select>
+  <div class="stats">
+   <div class="stat"><small>챔피언</small><strong id="champCount">40</strong></div>
+   <div class="stat"><small>팀 구성</small><strong>5 vs 5</strong></div>
+   <div class="stat"><small>전투</small><strong>턴제</strong></div>
+   <div class="stat"><small>승리 조건</small><strong>전멸</strong></div>
+  </div>
+  <button id="start" class="primary wide" style="margin-top:14px">게임 시작 →</button>
+ </div>
+ <div class="panel">
+  <h2 class="title">전투 가이드 <span class="gold">HOW TO PLAY</span></h2>
+  <p>01. 밴픽 단계에서 금지할 챔피언을 선택합니다.</p>
+  <p>02. 블루팀 챔피언 5명을 직접 선택합니다.</p>
+  <p>03. 아군 챔피언을 선택하고 행동을 결정합니다.</p>
+  <p>04. 아군이 모두 행동하면 턴을 종료합니다.</p>
+  <p>05. 적을 모두 처치하면 승리합니다.</p>
+  <div class="notice">암살자는 높은 스킬 피해, 탱커는 강한 보호막, 서포터는 아군 회복에 특화되어 있습니다. 스킬에는 재사용 대기시간이 있습니다.</div>
+  <div class="muted small">팬메이드 게임이며 공식 LoL 클라이언트나 실시간 패치 데이터와 연결되지 않습니다.</div>
+ </div>
+</section>
+
+<section id="draft" class="hidden">
+ <div class="phases" id="phases"></div>
+ <div class="grid">
+  <div class="panel"><h2 class="title">블루팀 <span id="bc" class="muted">0/5</span></h2><div class="teamline" id="blueSlots"></div></div>
+  <div class="panel"><h2 class="title">레드팀 AI <span id="rc" class="muted">0/5</span></h2><div class="teamline" id="redSlots"></div></div>
+ </div>
+ <div class="panel" style="margin-top:12px">
+  <h2 class="title"><span id="draftTitle">챔피언 밴</span><span id="draftCount" class="muted"></span></h2>
+  <div class="controls" style="margin-bottom:9px">
+   <input id="search" placeholder="챔피언 또는 역할 검색" style="flex:1">
+   <select id="filter"><option value="all">모든 역할</option><option>탑</option><option>정글</option><option>미드</option><option>원딜</option><option>서포터</option></select>
+  </div>
+  <div class="champ-grid" id="champGrid"></div>
+  <div class="controls" style="margin-top:10px">
+   <button id="draftAction" class="primary" style="flex:1">선택 확정</button>
+   <button id="autoDraft" style="flex:1">나머지 밴픽 자동 진행</button>
+   <button id="home">처음으로</button>
+  </div>
+ </div>
+ <div class="panel" style="margin-top:12px"><h2 class="title">밴픽 기록</h2><div id="draftLog" class="log"></div></div>
+</section>
+
+<section id="battle" class="hidden">
+ <div class="panel">
+  <div class="controls" style="justify-content:space-between">
+   <div><div class="gold small">TACTICAL COMBAT</div><h2 style="margin:2px 0">소환사의 협곡: 교전</h2><div id="turnLabel" class="muted small"></div></div>
+   <button id="newGame">새 게임</button>
+  </div>
+  <div class="stats" style="margin-top:12px">
+   <div class="stat"><small>턴</small><strong id="turnStat">1</strong></div>
+   <div class="stat"><small>블루 생존</small><strong id="blueAlive">5/5</strong></div>
+   <div class="stat"><small>레드 생존</small><strong id="redAlive">5/5</strong></div>
+   <div class="stat"><small>행동 가능</small><strong id="readyStat">5</strong></div>
+  </div>
+ </div>
+ <div class="grid" style="margin-top:12px">
+  <div class="panel"><h2 class="title">블루팀 <span class="muted small">아군 선택</span></h2><div class="unitrow" id="battleBlue"></div></div>
+  <div class="panel"><h2 class="title">레드팀 <span class="muted small">공격 대상</span></h2><div class="unitrow" id="battleRed"></div></div>
+ </div>
+ <div class="grid" style="margin-top:12px">
+  <div class="panel">
+   <h2 class="title">행동 선택 <span id="actingName" class="gold"></span></h2>
+   <div id="hint" class="notice">행동할 아군을 선택하세요.</div>
+   <div class="actions" id="actions"></div>
+   <button id="endTurn" class="primary wide" style="margin-top:9px">아군 행동 종료 →</button>
+   <div id="result" style="display:none;margin-top:12px"></div>
+  </div>
+  <div class="panel"><h2 class="title">전투 기록 <span class="muted small">BATTLE LOG</span></h2><div id="battleLog" class="log"></div></div>
+ </div>
+</section>
+<footer>RIFT TACTICS · 모바일 최적화 · 단일 HTML · 비공식 팬메이드 게임</footer>
+</div>
+
+<script>
+"use strict";
+const raw=[
+["가렌","탑","⚔️","전사",115,13,5,5],["다리우스","탑","🪓","전사",125,15,4,4],
+["레넥톤","탑","🐊","전사",115,14,5,6],["피오라","탑","🗡️","결투가",95,17,5,9],
+["잭스","탑","🔱","결투가",105,15,6,7],["카밀","탑","🦿","암살자",95,17,5,8],
+["아트록스","탑","🩸","전사",120,14,6,5],["말파이트","탑","🪨","탱커",145,9,12,3],
+["리 신","정글","🐉","전사",105,15,5,8],["바이","정글","👊","전사",115,14,6,6],
+["비에고","정글","👑","전사",100,16,5,8],["아무무","정글","🧻","탱커",130,10,9,4],
+["카직스","정글","🦗","암살자",85,19,3,9],["이블린","정글","💜","암살자",85,18,4,8],
+["릴리아","정글","🦌","메이지",95,14,5,8],["자르반 4세","정글","🏇","전사",115,13,7,6],
+["아리","미드","🦊","메이지",90,16,4,8],["야스오","미드","🌪️","결투가",95,17,4,8],
+["요네","미드","👹","암살자",95,18,4,8],["오리아나","미드","⚙️","메이지",95,17,4,6],
+["신드라","미드","🔮","메이지",90,19,3,6],["제드","미드","🥷","암살자",85,20,3,9],
+["아칼리","미드","🌫️","암살자",85,19,3,9],["갈리오","미드","🗿","탱커",125,12,9,5],
+["징크스","원딜","🔫","원거리 딜러",85,19,3,7],["카이사","원딜","🚀","원거리 딜러",90,18,4,8],
+["케이틀린","원딜","🎯","원거리 딜러",85,20,3,7],["이즈리얼","원딜","✨","원거리 딜러",90,17,4,9],
+["애쉬","원딜","🏹","원거리 딜러",90,16,4,6],["루시안","원딜","🔫","원거리 딜러",90,18,4,8],
+["레오나","서포터","☀️","탱커",135,10,10,4],["노틸러스","서포터","⚓","탱커",140,10,10,3],
+["쓰레쉬","서포터","🪝","탱커",125,12,8,5],["룰루","서포터","🧚","서포터",95,12,5,7],
+["잔나","서포터","🌬️","서포터",90,11,5,8],["나미","서포터","🌊","서포터",95,12,5,7],
+["브라움","서포터","🛡️","탱커",135,9,11,4],["소라카","서포터","⭐","서포터",90,10,4,6],
+["브랜드","서포터","🔥","메이지",85,18,3,5],["파이크","서포터","🦈","암살자",85,17,3,9]
+];
+const C=raw.map((v,id)=>({id,name:v[0],role:v[1],emoji:v[2],type:v[3],maxHp:v[4],atk:v[5],def:v[6],spd:v[7]}));
+const $=id=>document.getElementById(id);
+const steps=[
+["blueBan","블루팀 밴"],["redBan","레드팀 밴"],
+["blueBan","블루팀 추가 밴"],["redBan","레드팀 추가 밴"],
+["bluePick","블루팀 픽 1"],["redPick","레드팀 픽 1"],
+["redPick","레드팀 픽 2"],["bluePick","블루팀 픽 2"],
+["bluePick","블루팀 픽 3"],["redPick","레드팀 픽 3"],
+["redPick","레드팀 픽 4"],["bluePick","블루팀 픽 4"],
+["bluePick","블루팀 픽 5"],["redPick","레드팀 픽 5"]
+];
+let difficulty="normal",step=0,selected=null,blue=[],red=[],bans=[],used=new Set(),draftLogs=[];
+let turn=1,activeBlue=0,activeTarget=0,acted=new Set(),battleLogs=[],gameOver=false;
+function make(c,team){return {...c,team,hp:c.maxHp,shield:0,alive:true,cooldown:0,guard:false}}
+function alive(team){return team.filter(c=>c.alive)}
+function sayDraft(s){draftLogs.unshift(s);$("draftLog").innerHTML=draftLogs.map(x=>`<div>${x}</div>`).join("")}
+function goHome(){$("setup").classList.remove("hidden");$("draft").classList.add("hidden");$("battle").classList.add("hidden");$("status").textContent="게임 준비"}
+function start(){
+ difficulty=$("difficulty").value;step=0;selected=null;blue=[];red=[];bans=[];used=new Set();draftLogs=[];sayDraft("게임 시작 · 레드팀 AI: "+$("difficulty").selectedOptions[0].text);
+ $("setup").classList.add("hidden");$("draft").classList.remove("hidden");$("status").textContent="밴픽 진행";
+ if($("mode").value==="quick"){
+  let pool=C.slice();
+  for(let i=0;i<5;i++){
+   let b=pickAI(pool,blue,red);blue.push(make(b,"blue"));used.add(b.id);pool=pool.filter(c=>c.id!==b.id);
+   let r=pickAI(pool,red,blue);red.push(make(r,"red"));used.add(r.id);pool=pool.filter(c=>c.id!==r.id);
+  }
+  battleStart();
+ }else renderDraft();
+}
+function score(c,team,enemy){
+ let s=c.atk*.75+c.def*.65+c.maxHp*.045+c.spd*.6;
+ let roles=team.map(x=>x.role);
+ if(!roles.includes(c.role))s+=difficulty==="easy"?0:8;
+ if(c.role==="정글"&&!roles.includes("정글"))s+=9;
+ if(c.role==="서포터"&&!roles.includes("서포터"))s+=difficulty==="expert"?14:8;
+ if(enemy.some(x=>x.type==="암살자")&&c.def>=8)s+=3;
+ if(enemy.some(x=>x.type==="탱커")&&c.atk>=17)s+=4;
+ if(c.role==="원딜"&&!roles.includes("원딜"))s+=difficulty==="expert"?12:6;
+ return s;
+}
+function pickAI(pool,team,enemy){
+ let p=pool.filter(c=>!used.has(c.id)&&!bans.includes(c.id));
+ if(!p.length)p=pool.filter(c=>!used.has(c.id));
+ if(!p.length)p=C.filter(c=>!used.has(c.id));
+ let ranked=p.map(c=>({c,s:score(c,team,enemy)})).sort((a,b)=>b.s-a.s);
+ if(!ranked.length)return C[0];
+ let n={easy:ranked.length,normal:Math.min(7,ranked.length),hard:Math.min(3,ranked.length),expert:1}[difficulty];
+ return ranked[Math.floor(Math.random()*n)].c;
+}
+function current(){return steps[step]}
+function renderDraft(){
+ if(step>=steps.length){finishDraft();return}
+ let [who,label]=current();
+ $("draftTitle").textContent=label;$("draftCount").textContent=`단계 ${step+1}/${steps.length}`;
+ $("draftAction").textContent=who==="blueBan"?"선택 챔피언 밴":who==="bluePick"?"챔피언 선택 확정":"다음 단계";
+ $("draftAction").disabled=who.startsWith("blue")&&selected===null;
+ $("phases").innerHTML=steps.map((x,i)=>`<div class="phase ${i===step?"active":""}">${i+1}. ${x[1]}</div>`).join("");
+ drawSlots();drawChamps();
+}
+function drawSlots(){
+ for(let [id,team] of [["blueSlots",blue],["redSlots",red]]){
+  $(id).innerHTML=Array.from({length:5},(_,i)=>{let c=team[i];return `<div class="slot ${c?"filled":""}">${c?`<span class="emoji">${c.emoji}</span><b>${c.name}</b><small>${c.role}</small>`:`<span class="emoji" style="opacity:.25">＋</span><small>빈 슬롯</small>`}</div>`}).join("");
+ }
+ $("bc").textContent=blue.length+"/5";$("rc").textContent=red.length+"/5";
+}
+function drawChamps(){
+ let q=$("search").value.trim().toLowerCase(),f=$("filter").value;
+ let p=C.filter(c=>!used.has(c.id)&&!bans.includes(c.id)&&(!q||c.name.toLowerCase().includes(q)||c.role.includes(q)||c.type.includes(q))&&(f==="all"||c.role===f));
+ $("champGrid").innerHTML=p.map(c=>`<button class="champ ${selected===c.id?"selected":""}" data-id="${c.id}"><span class="role">${c.role}</span><span class="emoji">${c.emoji}</span><strong>${c.name}</strong><small>${c.type} · 공격 ${c.atk}</small></button>`).join("")||'<div class="muted">선택 가능한 챔피언이 없습니다.</div>';
+ document.querySelectorAll(".champ").forEach(el=>el.onclick=()=>{selected=Number(el.dataset.id);drawChamps();$("draftAction").disabled=current()[0].startsWith("blue")&&selected===null});
+}
+function aiDraftStep(){
+ let who=current()[0];
+ if(who==="redBan"){
+  let pool=C.filter(c=>!used.has(c.id)&&!bans.includes(c.id));
+  let c;
+  if(difficulty==="easy")c=pool[Math.floor(Math.random()*pool.length)];
+  else c=pool.sort((a,b)=>score(b,blue,red)-score(a,blue,red))[0];
+  if(c){bans.push(c.id);sayDraft(`<span style="color:var(--red)">레드 AI 밴:</span> ${c.name}`)}
+ }else if(who==="redPick"){
+  let c=pickAI(C,red,blue);
+  if(c){red.push(make(c,"red"));used.add(c.id);sayDraft(`<span style="color:var(--red)">레드 AI 픽:</span> ${c.name} (${c.role})`)}
+ }
+}
+function advance(){
+ let who=current()[0];
+ if(who==="blueBan"){
+  if(selected===null)return;
+  bans.push(selected);sayDraft(`<span style="color:var(--blue)">블루 밴:</span> ${C[selected].name}`);
+ }else if(who==="bluePick"){
+  if(selected===null)return;
+  blue.push(make(C[selected],"blue"));used.add(selected);sayDraft(`<span style="color:var(--blue)">블루 픽:</span> ${C[selected].name} (${C[selected].role})`);
+ }else aiDraftStep();
+ selected=null;step++;renderDraft();
+}
+function autoDraft(){
+ while(step<steps.length){
+  let who=current()[0];
+  if(who==="blueBan"){
+   let c=pickAI(C,blue,red);bans.push(c.id);sayDraft("블루 자동 밴: "+c.name);
+  }else if(who==="bluePick"){
+   let c=pickAI(C,blue,red);blue.push(make(c,"blue"));used.add(c.id);sayDraft("블루 자동 픽: "+c.name);
+  }else aiDraftStep();
+  step++;
+ }
+ finishDraft();
+}
+function finishDraft(){
+ while(blue.length<5){let c=pickAI(C,blue,red);blue.push(make(c,"blue"));used.add(c.id)}
+ while(red.length<5){let c=pickAI(C,red,blue);red.push(make(c,"red"));used.add(c.id)}
+ battleStart();
+}
+function battleStart(){
+ turn=1;activeBlue=0;activeTarget=0;acted=new Set();battleLogs=[];gameOver=false;
+ $("draft").classList.add("hidden");$("battle").classList.remove("hidden");$("status").textContent="전투 중";
+ log("전투 시작! 아군이 모두 행동하면 턴 종료를 누르세요.");renderBattle();
+}
+function log(s){battleLogs.unshift(s);$("battleLog").innerHTML=battleLogs.slice(0,100).map(x=>`<div>${x}</div>`).join("")}
+function deal(t,amount){
+ let raw=Math.max(1,amount-t.def*.42),blocked=Math.min(t.shield,raw);
+ t.shield-=blocked;raw-=blocked;
+ if(t.guard){raw*=.55;t.guard=false}
+ t.hp=Math.max(0,t.hp-raw);
+ if(t.hp<=0){t.alive=false;log(`<span style="color:var(--red)">${t.name}</span> 전투 불능!`)}
+ return Math.round(raw);
+}
+function renderUnits(id,team,active,selectable){
+ $(id).innerHTML=team.map((c,i)=>`<div class="unit ${!c.alive?"dead":""} ${i===active?"active":""}" data-i="${i}"><span class="emoji">${c.emoji}</span><div class="unitname">${c.name}</div><div class="health ${c.team==="red"?"enemyhp":""}"><span style="width:${Math.max(0,c.hp/c.maxHp*100)}%"></span></div><div class="hptext">${Math.ceil(c.hp)}/${c.maxHp}</div><span class="tag">${c.role}</span>${c.shield?`<div class="hptext">보호막 ${Math.round(c.shield)}</div>`:""}${c.cooldown?`<div class="hptext">스킬 대기 ${c.cooldown}</div>`:""}</div>`).join("");
+ if(selectable)$(id).querySelectorAll(".unit").forEach(el=>el.onclick=()=>{
+  let i=Number(el.dataset.i);
+  if(!team[i].alive)return;
+  if(id==="battleBlue")activeBlue=i;else activeTarget=i;
+  renderBattle();
+ });
+}
+function renderBattle(){
+ if(!gameOver&&(!blue[activeBlue]||!blue[activeBlue].alive||acted.has(activeBlue))){
+  let i=blue.findIndex((c,i)=>c.alive&&!acted.has(i));if(i>=0)activeBlue=i;
+ }
+ renderUnits("battleBlue",blue,activeBlue,true);renderUnits("battleRed",red,activeTarget,true);
+ $("turnStat").textContent=turn;$("blueAlive").textContent=alive(blue).length+"/5";$("redAlive").textContent=alive(red).length+"/5";
+ $("readyStat").textContent=alive(blue).filter(c=>!acted.has(blue.indexOf(c))).length;
+ $("turnLabel").textContent=`턴 ${turn} · 블루팀 행동`;
+ let a=blue[activeBlue];
+ $("actingName").textContent=a&&a.alive?a.name:"";
+ $("hint").textContent=gameOver?"전투 종료":!a||!a.alive?"생존한 아군을 선택하세요.":acted.has(activeBlue)?"이미 행동했습니다. 다른 아군을 선택하거나 턴을 종료하세요.":"공격과 스킬은 오른쪽에서 선택한 적을 대상으로 합니다.";
+ let disabled=gameOver||!a||!a.alive||acted.has(activeBlue);
+ $("actions").innerHTML=`
+ <button class="action" ${disabled?"disabled":""} onclick="act('attack')"><b>⚔️ 기본 공격</b><small>공격력 기반 피해</small></button>
+ <button class="action" ${disabled||a?.cooldown>0?"disabled":""} onclick="act('skill')"><b>✦ 고유 스킬</b><small>${a?.cooldown>0?"재사용 대기 "+a.cooldown+"턴":"역할별 특수 효과"}</small></button>
+ <button class="action" ${disabled?"disabled":""} onclick="act('guard')"><b>🛡️ 방어</b><small>이번 턴 받는 피해 감소</small></button>
+ <button class="action" ${disabled?"disabled":""} onclick="act('rest')"><b>＋ 재정비</b><small>체력 회복 및 보호막</small></button>`;
+ $("endTurn").disabled=gameOver||alive(blue).every(c=>acted.has(blue.indexOf(c)));
+}
+function act(kind){
+ let a=blue[activeBlue],t=red[activeTarget];
+ if(gameOver||!a||!a.alive||acted.has(activeBlue))return;
+ if((kind==="attack"||kind==="skill")&&(!t||!t.alive)){log("먼저 생존한 적 챔피언을 선택하세요.");return}
+ if(kind==="skill"&&a.cooldown>0){log(a.name+"의 스킬은 아직 재사용 대기 중입니다.");return}
+ if(kind==="attack"){
+  let n=deal(t,a.atk);log(`${a.emoji} ${a.name} 기본 공격 → ${t.name}: ${n} 피해`);
+ }else if(kind==="skill"){
+  let mult=1.65,extra="";
+  if(a.type==="암살자"){mult=2.15;extra=" 암살자 추가 피해!"}
+  else if(a.type==="탱커"){mult=1.25;a.shield+=16;extra=" 보호막 16 획득"}
+  else if(a.type==="서포터"){
+   mult=1.2;
+   let low=alive(blue).slice().sort((x,y)=>x.hp/x.maxHp-y.hp/y.maxHp)[0];
+   if(low){let h=Math.min(22,low.maxHp-low.hp);low.hp+=h;extra=` ${low.name} ${Math.round(h)} 회복`}
+  }else if(a.type==="메이지"){mult=1.9;extra=" 마법 폭발!"}
+  else if(a.type==="원거리 딜러"){mult=1.85;extra=" 정밀 사격!"}
+  else if(a.type==="결투가"){mult=1.8;let h=Math.min(8,a.maxHp-a.hp);a.hp+=h;extra=` 체력 ${Math.round(h)} 회복`}
+  else {mult=1.7}
+  let n=deal(t,a.atk*mult);a.cooldown=2;
+  log(`${a.emoji} ${a.name} 고유 스킬 → ${t.name}: ${n} 피해.${extra}`);
+ }else if(kind==="guard"){
+  a.shield+=Math.round(12+a.def);a.guard=true;
+  log(`${a.name} 방어 태세: 보호막 ${Math.round(12+a.def)} 획득, 다음 피격 피해 감소`);
+ }else if(kind==="rest"){
+  let h=Math.min(Math.round(a.maxHp*.2),a.maxHp-a.hp);a.hp+=h;a.shield+=5;
+  log(`${a.name} 재정비: 체력 ${h} 회복, 보호막 5 획득`);
+ }
+ acted.add(activeBlue);checkEnd();
+ if(!gameOver){let i=blue.findIndex((c,i)=>c.alive&&!acted.has(i));if(i>=0)activeBlue=i}
+ renderBattle();
+}
+function checkEnd(){
+ if(!alive(red).length||!alive(blue).length){
+  gameOver=true;let win=!alive(red).length;
+  log(win?"블루팀 승리!":"레드팀 승리!");
+  $("result").style.display="block";
+  $("result").innerHTML=`<h2 style="color:${win?"var(--blue)":"var(--red)"}">${win?"VICTORY — 승리":"DEFEAT — 패배"}</h2><p>${win?"적 챔피언을 모두 제압했습니다!":"아군이 전멸했습니다. 다른 조합으로 재도전하세요."}</p><button class="primary wide" onclick="goHome()">새 게임 시작</button>`;
+ }
+}
+function endTurn(){
+ if(gameOver)return;
+ if(!alive(blue).every(c=>acted.has(blue.indexOf(c)))){log("아직 행동하지 않은 아군이 있습니다. 남은 행동을 건너뛰고 턴을 종료합니다.")}
+ log(`— 턴 ${turn}: 레드팀 AI 행동 —`);
+ for(let e of alive(red)){
+  let allies=alive(blue);if(!allies.length)break;
+  let enemies=alive(red);
+  let target;
+  if(difficulty==="easy")target=allies[Math.floor(Math.random()*allies.length)];
+  else{
+   let ranked=allies.slice().sort((a,b)=>{
+    let sa=(a.hp/a.maxHp)*10-a.def*.1-(a.type==="원거리 딜러"?1.5:0);
+    let sb=(b.hp/b.maxHp)*10-b.def*.1-(b.type==="원거리 딜러"?1.5:0);
+    return sa-sb;
+   });
+   target=ranked[0];
+  }
+  let roll=Math.random();
+  if(e.type==="서포터"&&roll<.38){
+   let low=enemies.slice().sort((a,b)=>a.hp/a.maxHp-b.hp/b.maxHp)[0];
+   let h=Math.min(16,low.maxHp-low.hp);low.hp+=h;log(`레드 ${e.name}: ${low.name} ${Math.round(h)} 회복`);
+  }else if(e.type==="탱커"&&roll<.3){
+   e.shield+=12;e.guard=true;log(`레드 ${e.name}: 보호막 12 획득`);
+  }else{
+   let mult=e.type==="암살자"?1.7:e.type==="메이지"?1.4:e.type==="원거리 딜러"?1.3:1;
+   let n=deal(target,e.atk*mult);log(`레드 ${e.name} → ${target.name}: ${n} 피해`);
+  }
+  if(!alive(blue).length)break;
+ }
+ checkEnd();
+ if(!gameOver){
+  turn++;acted.clear();
+  for(let c of [...blue,...red]){if(c.cooldown>0)c.cooldown--;c.guard=false}
+  activeBlue=blue.findIndex(c=>c.alive);activeTarget=red.findIndex(c=>c.alive);
+  log(`— 턴 ${turn}: 블루팀 행동 —`);
+ }
+ renderBattle();
+}
+$("start").onclick=start;
+$("draftAction").onclick=advance;
+$("autoDraft").onclick=autoDraft;
+$("home").onclick=goHome;
+$("newGame").onclick=goHome;
+$("endTurn").onclick=endTurn;
+$("search").oninput=drawChamps;
+$("filter").onchange=drawChamps;
+$("champCount").textContent=C.length;
+goHome();
+</script>
+</body>
+</html>
